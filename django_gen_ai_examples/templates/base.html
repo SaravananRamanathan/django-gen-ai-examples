@@ -1,0 +1,30 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{% block title %}{% endblock %}Srvnn</title>
+        <meta charset="utf-8">
+        <meta name="google" content="notranslate">
+        <meta http-equiv="Content-Language" content="en" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="keywords" content="" />
+        <meta name="description" content="{% block meta_description %}{% endblock %}" />
+        <meta name="mobile-web-app-capable" content="yes">
+        <link rel="icon" type="image/png" sizes="96x96" href="{% static "ico/favicon-96.png" %}">
+        <link rel="icon" type="image/png" sizes="32x32" href="{% static "ico/favicon-32.png" %}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{% static "ico/favicon-16.png" %}">
+        <!-- CSS -->
+        <link rel="stylesheet" href="{% static 'css/index.css' %}">
+    </head>
+    <body class="{% block bodyclass %}{% endblock %}">
+        {% block body %}
+            {% block content %}{% endblock content %}
+        {% endblock body %}
+        <!-- Common 3rd party js -->
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+        <!-- NOTE: Add Additional js to individual pages via footer_scripts. -->
+        {% block footer_scripts %}{% endblock %}
+    </body>
+</html>

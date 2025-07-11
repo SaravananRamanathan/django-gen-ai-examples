@@ -1,0 +1,128 @@
+const { createApp, ref, reactive, onMounted, nextTick } = Vue;
+
+const app = createApp({
+  setup() {
+    // State:
+    const isSidebarOpen = ref(window.innerWidth > 768);
+    const hamburgerVisible = ref(!isSidebarOpen.value);
+    const newMessage = ref("");
+    const chatMessagesContainer = ref(null);
+    const chatModels = ref([
+      {
+        name: "Single prompt",
+        apiUrl: single_prompt_api_url,
+      },
+      {
+        name: "Placeholder 2",
+        apiUrl: "/api/chatbot/2/",
+      },
+      {
+        name: "Placeholder 3",
+        apiUrl: "/api/chatbot/3/",
+      },
+    ]);
+    const currentModel = ref(chatModels.value[0]);
+    const messages = ref([{ sender: "bot", text: "Hello! How can I help you today?" }]);
+
+    // Method:
+    const toggleSidebar = () => {
+      if (isSidebarOpen.value) {
+        isSidebarOpen.value = false;
+        setTimeout(() => {
+          hamburgerVisible.value = true;
+        }, 150);
+      } else {
+        hamburgerVisible.value = false;
+        isSidebarOpen.value = true;
+      }
+    };
+
+    const resetChat = () => {
+      messages.value = [
+        {
+          sender: "bot",
+          text: `Switched to ${currentModel.value.name}. Ask me anything!`,
+        },
+      ];
+    };
+
+    const selectModel = (model) => {
+      currentModel.value = model;
+      resetChat();
+      if (window.innerWidth < 768 && isSidebarOpen.value) {
+        toggleSidebar();
+      }
+    };
+
+    const scrollToBottom = async () => {
+      await nextTick();
+      const container = chatMessagesContainer.value;
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    };
+
+    const sendMessage = async () => {
+      const userInput = newMessage.value.trim();
+      if (!userInput) return;
+
+      messages.value.push({ sender: "user", text: userInput });
+      newMessage.value = "";
+      await scrollToBottom();
+
+      try {
+        const response = await fetch(currentModel.value.apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: JSON.stringify({ message: userInput }),
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        if (data.message) {
+          messages.value.push({ sender: "bot", text: data.message });
+        } else {
+          throw new Error(data.error || "Unknown API error");
+        }
+      } catch (error) {
+        console.error("Fetch Error:", error);
+        messages.value.push({
+          sender: "bot",
+          text: "Sorry, I couldn't connect to the server.",
+        });
+      }
+      await scrollToBottom();
+    };
+
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === name + "=") {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    return {
+      isSidebarOpen,
+      hamburgerVisible,
+      newMessage,
+      chatMessagesContainer,
+      chatModels,
+      currentModel,
+      messages,
+      toggleSidebar,
+      selectModel,
+      sendMessage,
+    };
+  },
+});
+app.mount("#app");
