@@ -1,0 +1,28 @@
+[tool.black]
+line-length = 120
+skip-string-normalization = true
+include = '\.pyi?$'
+force-exclude = '''
+(
+    \.git
+  | migrations
+  | django_gen_ai_examples/settings/base.py
+  | django_gen_ai_examples/settings/dev.py
+  | django_gen_ai_examples/settings/prod.py
+)
+'''
+
+[tool.isort]
+profile = 'black'
+multi_line_output = 3
+include_trailing_comma = true
+line_length = 120
+combine_as_imports = true
+src_paths = ['django_gen_ai_examples/apps/', '/tests/']
+skip = [
+    ".venv",
+    "migrations",
+    "django_gen_ai_examples/settings/base.py",
+    "django_gen_ai_examples/settings/dev.py",
+    "django_gen_ai_examples/settings/prod.py",
+]
