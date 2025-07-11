@@ -18,7 +18,7 @@ multi_line_output = 3
 include_trailing_comma = true
 line_length = 120
 combine_as_imports = true
-src_paths = ['ams/apps/', '/tests/']
+src_paths = ['django_gen_ai_examples/apps/', '/tests/']
 skip = [
     ".venv",
     "migrations",
