@@ -1,7 +1,10 @@
 """
 Chat Bot Views
 """
+
 from django.views.generic import TemplateView
+
+from .utils import get_sidebar_menu_choices
 
 
 class ChatWindowView(TemplateView):
@@ -13,5 +16,6 @@ class ChatWindowView(TemplateView):
         "Add Additional context to template as needed."
 
         context = super().get_context_data(**kwargs)
+        context['sidebar_menu_choices'] = get_sidebar_menu_choices()
 
         return context

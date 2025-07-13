@@ -12,12 +12,23 @@
             <div class="close-sidebar-btn" @click="toggleSidebar">←</div>
         </div>
         <ul>
-            <li v-for="model in chatModels"
-                :key="model.name"
-                :class="{ 'active': model.apiUrl === currentModel.apiUrl }"
-                @click="selectModel(model)">
-                <span v-text="model.name"></span>
-            </li>
+            <template v-for="category in chatModels" :key="category.name">
+                <!-- Category Item -->
+                <li :class="{ 'category-item': category.subItems, 'expanded': category.isExpanded, 'active': isCategoryActive(category) }"
+                    @click="handleCategoryClick(category)">
+                    <span v-text="category.name"></span>
+                </li>
+
+                <!-- Sub Items -->
+                <ul class="sub-menu" v-if="category.subItems && category.isExpanded">
+                    <li v-for="subItem in category.subItems"
+                        :key="subItem.name"
+                        :class="{ 'active': subItem.apiUrl === currentModel.apiUrl }"
+                        @click="selectModel(subItem)">
+                        <span v-text="subItem.name"></span>
+                    </li>
+                </ul>
+            </template>
         </ul>
     </div>
 
@@ -52,8 +63,9 @@
 
 
 {% block footer_scripts %}
+{{ sidebar_menu_choices|json_script:"sidebar-menu-choices" }}
 <script type="text/javascript">
-    var single_prompt_api_url = "{% url 'chatbot-api:gemini_chat_bot' %}";
+    var sidebarMenuChoices = JSON.parse(document.getElementById('sidebar-menu-choices').textContent);
 </script>
 <script type="text/javascript" src="{% static 'js/chat_bot/chat_bot_vue.js' %}"></script>
 {% endblock footer_scripts %}
