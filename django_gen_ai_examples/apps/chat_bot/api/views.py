@@ -33,3 +33,31 @@ class GeminiAPIView(APIView):
         bot_response_text = f"{response}"
 
         return Response({"message": bot_response_text}, status=status.HTTP_200_OK)
+
+
+class SummarizeTextAPIView(APIView):
+    "Summarizes the provided text using Gemini API"
+
+    def post(self, request, *_, **__):
+        "Handle API request to summarize text"
+        text_to_summarize = request.data.get("message")
+        if not text_to_summarize:
+            return Response({"error": "Missing message"}, status=status.HTTP_400_BAD_REQUEST)
+
+        api_key = os.getenv('GEMINI_API_KEY')
+        client = OpenAI(api_key=api_key, base_url="https://generativelanguage.googleapis.com/v1beta/openai/")
+
+        prompt: str = (
+            "Your task is to generate a summary of the user written input text, "
+            "delimited by triple backticks. "
+            f"""\nText: ```{text_to_summarize}```"""
+        )
+
+        completion = client.chat.completions.create(
+            model="gemini-2.5-flash",
+            messages=[
+                {"role": "user", "content": prompt},
+            ],
+        )
+        summary = completion.choices[0].message.content
+        return Response({"message": summary}, status=status.HTTP_200_OK)

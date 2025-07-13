@@ -29,8 +29,7 @@ class SidebarMenuChoices:
                 cls.IS_EXPANDED_KEY: True,
                 cls.SUB_ITEMS_KEY: [
                     {cls.NAME_KEY: 'Single prompt', cls.API_URL_NAME_KEY: 'chatbot-api:gemini_chat_bot'},
-                    # TODO: Add more sub-items as needed:
-                    # {cls.NAME_KEY: 'sub-item-2', cls.API_URL_KEY: 'chatbot-api:sub_item_2'},
+                    {cls.NAME_KEY: 'Summarize text', cls.API_URL_NAME_KEY: 'chatbot-api:summarize_text'},
                 ],
             },
             # TODO: Add more categories as needed:
