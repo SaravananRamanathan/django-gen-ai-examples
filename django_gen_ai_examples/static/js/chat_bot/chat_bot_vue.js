@@ -7,21 +7,8 @@ const app = createApp({
     const hamburgerVisible = ref(!isSidebarOpen.value);
     const newMessage = ref("");
     const chatMessagesContainer = ref(null);
-    const chatModels = ref([
-      {
-        name: "Single prompt",
-        apiUrl: single_prompt_api_url,
-      },
-      {
-        name: "Placeholder 2",
-        apiUrl: "/api/chatbot/2/",
-      },
-      {
-        name: "Placeholder 3",
-        apiUrl: "/api/chatbot/3/",
-      },
-    ]);
-    const currentModel = ref(chatModels.value[0]);
+    const chatModels = ref(sidebarMenuChoices); // NOTE: sidebarMenuChoices is received from Django view.
+    const currentModel = ref(chatModels.value[0]?.subItems[0]);
     const messages = ref([{ sender: "bot", text: "Hello! How can I help you today?" }]);
 
     // Method:
@@ -44,6 +31,25 @@ const app = createApp({
           text: `Switched to ${currentModel.value.name}. Ask me anything!`,
         },
       ];
+    };
+
+    const handleCategoryClick = (category) => {
+      // Expand/Close if has subItems, otherwise select.
+      if (category.subItems && category.subItems.length > 0) {
+        category.isExpanded = !category.isExpanded;
+      } else {
+        selectModel(category);
+      }
+    };
+
+    const isCategoryActive = (category) => {
+      if (category.apiUrl === currentModel.value.apiUrl) {
+        return true;
+      }
+      if (category.subItems) {
+        return category.subItems.some((sub) => sub.apiUrl === currentModel.value.apiUrl);
+      }
+      return false;
     };
 
     const selectModel = (model) => {
@@ -122,6 +128,8 @@ const app = createApp({
       toggleSidebar,
       selectModel,
       sendMessage,
+      handleCategoryClick,
+      isCategoryActive,
     };
   },
 });

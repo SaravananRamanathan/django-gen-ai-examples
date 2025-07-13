@@ -7,6 +7,8 @@
     --bubble-user-bg: #005c99;
     --bubble-bot-bg: #333333;
     --input-bg: #252525;
+    --sidebar-submenu-bg: #343434;
+    --sidebar-menu-hover-bg: #58a6ff;
 }
 
 html, body {
@@ -79,7 +81,7 @@ html, body {
     border-radius: 5px;
     transition: background-color 0.2s, color 0.2s;
 }
-.sidebar li:hover { background-color: var(--bubble-bot-bg); }
+.sidebar li:hover { background-color: var(--sidebar-menu-hover-bg); }
 .sidebar li.active {
     background-color: var(--brand-color);
     color: white;
@@ -190,4 +192,44 @@ html, body {
 .fade-enter-to,
 .fade-leave-from {
     opacity: 1;
+}
+
+
+/* --- Expandable Sidebar Menu --- */
+
+.sidebar li.category-item {
+    font-weight: bold;
+    color: #fff;
+    /* TODO: Maybe add border in-between category. */
+    /* border-bottom: 1px solid #444;
+    margin-bottom: 15px; */
+}
+
+.sidebar li.category-item::after {
+    content: '›';
+    float: right;
+    transition: transform 0.2s ease-in-out;
+    font-size: 20px;
+    margin-right: 5px;
+}
+
+.sidebar li.category-item.expanded::after {
+    transform: rotate(90deg);
+}
+
+.sub-menu {
+    list-style: none;
+    padding: 0;
+    margin: 5px 0 10px 20px;
+    background-color: var(--sidebar-submenu-bg);
+}
+
+.sub-menu li {
+    font-weight: normal !important;
+    color: var(--text-color) !important;
+}
+
+.sub-menu li.active {
+    background-color: var(--brand-color) !important;
+    color: #fff !important;
 }
