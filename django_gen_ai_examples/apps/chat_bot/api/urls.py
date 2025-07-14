@@ -9,6 +9,6 @@ from . import views
 app_name = 'chatbot-api'
 
 urlpatterns = [
-    path('gemini/', views.GeminiAPIView.as_view(), name='gemini_chat_bot'),
+    path('single-prompt/', views.SinglePromptAPIView.as_view(), name='single_prompt'),
     path('summarize/', views.SummarizeTextAPIView.as_view(), name='summarize_text'),
 ]
