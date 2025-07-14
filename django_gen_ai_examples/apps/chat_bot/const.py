@@ -32,6 +32,7 @@ class SidebarMenuChoices:
                 cls.SUB_ITEMS_KEY: [
                     {cls.NAME_KEY: 'Single prompt', cls.API_URL_NAME_KEY: 'chatbot-api:single_prompt'},
                     {cls.NAME_KEY: 'Summarize text', cls.API_URL_NAME_KEY: 'chatbot-api:summarize_text'},
+                    {cls.NAME_KEY: 'Sentiment analysis', cls.API_URL_NAME_KEY: 'chatbot-api:sentiment_analysis'},
                 ],
             },
             # TODO: Add more categories as needed:

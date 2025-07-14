@@ -76,3 +76,22 @@ class SummarizeTextAPIView(APIView):
         )
 
         return standard_response(message_str=api_response)
+
+
+class SentimentAnalysisAPIView(APIView):
+    "Performs sentiment analysis on the provided text using Gemini API"
+
+    def post(self, request, *_, **__):
+        "Handle API request to analyze sentiment"
+        request_message = retrieve_request_message(request.data)
+
+        prompt: str = (
+            "Your task is to analyze the sentiment of the user written input text, "
+            "delimited by triple backticks. "
+            f"""\nText: ```{request_message}```"""
+        )
+        api_response = gemini_completion_request(
+            prompt=prompt,
+        )
+
+        return standard_response(message_str=api_response)
