@@ -1,0 +1,5 @@
+Your tasks are the follwing:
+1. generate a summary of the user written input text delimited by triple backticks.
+2. Format the output as HTML with outter div tag and child tas as nessary. I want direct html string starting from div tag, no need to include ```html etc.
+
+Text: ```{{ request_message }}```

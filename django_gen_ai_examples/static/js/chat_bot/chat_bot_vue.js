@@ -88,7 +88,8 @@ const app = createApp({
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         if (data.message) {
-          messages.value.push({ sender: "bot", text: data.message });
+          const sanitizedHtml = DOMPurify.sanitize(data.message);
+          messages.value.push({ sender: "bot", text: sanitizedHtml });
         } else {
           throw new Error(data.error || "Unknown API error");
         }
