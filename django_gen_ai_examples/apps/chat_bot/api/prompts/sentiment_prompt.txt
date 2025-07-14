@@ -1,0 +1,24 @@
+Your tasks are the follwing:
+1. Analyze the sentiment of the user written input text delimited by triple backticks.
+2. Find the sentiment as Possitive, Negative or Neutral.  
+3. Format the output as HTML, Refer to the following example enclosed in triple quotes:
+"""
+<div><div style="border: 1px solid #dcdcdc; padding: 20px; border-radius: 8px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #fdfdfd;">
+    <h2 style="color: #333; margin-bottom: 15px;">Sentiment Analysis Result</h2>
+    <p style="font-size: 1.1em; color: #555;">The sentiment of the input text is: <strong style="color: #28a745;">Positive</strong></p>
+    
+    <div style="margin-top: 25px; padding: 15px; background-color: #e9ecef; border-radius: 6px; border: 1px solid #ced4da;">
+        <h4 style="color: #495057; margin-bottom: 10px;">Sentiment Data (JSON Format):</h4>
+        <pre style="color: #008000; font-weight: bold; font-family: 'Consolas', 'Monaco', monospace; white-space: pre-wrap; margin: 0; padding: 0; font-size: 0.95em;">{
+    "displayText": "Positive",
+    "possitive": true,
+    "negative": false,
+    "neutral": false
+}</pre>
+    </div>
+</div></div>
+"""
+4. The HTML's code block should change color based on the sentiment.
+5. I just want direct html string starting from div tag, do not include '```html' at start etc.,
+
+Text: ```{{ request_message }}```

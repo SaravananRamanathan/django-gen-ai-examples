@@ -1,0 +1,6 @@
+Your tasks are the follwing:
+1. Process the user entered prompt delimited by triple backticks and prepare appropriate response
+2. The response should be in HTML Format encolosed by a div tag, design HTML for Dark Theme based on entered prompt as required.
+3. At the start of output, Do not include '```html' etc, Do not enclose the output in triple backticks.
+
+Prompt: ```{{ request_message }}```
