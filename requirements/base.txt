@@ -10,8 +10,13 @@ python-dotenv==1.1.1
 djangorestframework==3.16.0
 django-filter==25.1
 
-# OpenAI
+# OpenAI & LLM Related
 openai==1.93.3
+google-genai==1.25.0 # new
+# google-generativeai==0.7.2 # Deprecated, but langchain-community still uses it.
+langchain==0.3.26
+langchain-community==0.3.27
+langchain-google-genai==2.1.7 # LangChain compatible google lib
 
 # Debug
 django-debug-toolbar==5.2.0
