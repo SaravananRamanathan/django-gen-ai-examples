@@ -6,11 +6,17 @@ from typing import Dict, Optional
 
 from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
+from langchain.prompts import ChatPromptTemplate
+
+# from langchain.chat_models import ChatGooglePalm # Deprecated.
+# from langchain_community.chat_models import ChatGooglePalm # Deprecated
+from langchain_google_genai.chat_models import ChatGoogleGenerativeAI
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from chat_bot.utils import gemini_completion_request
+from chat_bot.const import GeminiAPIConstants
+from chat_bot.utils import gemini_completion_request, get_gemini_api_key
 
 
 class PromptBasedAPIView(APIView):
@@ -104,3 +110,43 @@ class SentimentAnalysisAPIView(PromptBasedAPIView):
     "Performs sentiment analysis on the provided text using Gemini API"
 
     prompt_template_name = "sentiment_prompt.txt"
+
+
+class LCPromptTemplateAPIView(APIView):
+    "LangChain simple prompt template using the modern ChatGoogleGenerativeAI."
+
+    def post(self, request, *_, **__):
+        "Pass prompt through LangChain PromptTemplate"
+        request_message = request.data.get("message")
+        if not request_message:
+            return Response({"error": "Missing message"}, status=status.HTTP_400_BAD_REQUEST)
+
+        chat = ChatGoogleGenerativeAI(
+            temperature=0.0,
+            model=GeminiAPIConstants.MODEL,
+            google_api_key=get_gemini_api_key(),
+        )
+
+        template_string = """Translate the text \
+that is delimited by triple backticks \
+into a style that is {style}. \
+text: ```{text}```
+"""
+
+        style_instruction = """Indian Tamil \
+in a calm and respectful tone
+"""
+
+        prompt_template = ChatPromptTemplate.from_template(template_string)
+
+        formatted_prompt = prompt_template.format_messages(
+            style=style_instruction,
+            text=request_message,
+        )
+
+        api_response = chat.invoke(formatted_prompt)
+
+        response_content = api_response.content
+
+        response_data = {"message": response_content}
+        return Response(response_data, status=status.HTTP_200_OK)

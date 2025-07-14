@@ -12,6 +12,7 @@ class SidebarMenuChoices:
 
     # Main categories:
     COMPLETIONS = "Completions"
+    LANG_CHAIN = "LangChain"
 
     # JSON keys for sidebar menu items (Used by FE-Vue):
     NAME_KEY = "name"
@@ -35,9 +36,13 @@ class SidebarMenuChoices:
                     {cls.NAME_KEY: 'Sentiment analysis', cls.API_URL_NAME_KEY: 'chatbot-api:sentiment_analysis'},
                 ],
             },
-            # TODO: Add more categories as needed:
-            # {cls.NAME_KEY: 'Cat 2', cls.API_URL_KEY: 'chatbot-api:cat_2'},
-            # {cls.NAME_KEY: 'Cat 3', cls.API_URL_KEY: 'chatbot-api:cat_3'},
+            {
+                cls.NAME_KEY: cls.LANG_CHAIN,
+                cls.IS_EXPANDED_KEY: True,
+                cls.SUB_ITEMS_KEY: [
+                    {cls.NAME_KEY: 'Prompt Template', cls.API_URL_NAME_KEY: 'chatbot-api:prompt_template'},
+                ],
+            },
         ]
 
 
