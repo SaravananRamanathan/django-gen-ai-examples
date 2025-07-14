@@ -221,7 +221,8 @@ html, body {
     list-style: none;
     padding: 0;
     margin: 5px 0 10px 20px;
-    background-color: var(--sidebar-submenu-bg);
+    border-bottom: 1px dashed #444;
+    /* background-color: var(--sidebar-submenu-bg); */
 }
 
 .sub-menu li {

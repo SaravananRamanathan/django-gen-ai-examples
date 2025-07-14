@@ -2,37 +2,61 @@
 chat bot app api views
 """
 
-import os
+from typing import Dict, Optional
 
-from openai import OpenAI
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from chat_bot.utils import gemini_completion_request
 
-class GeminiAPIView(APIView):
-    "Sends chat input to Google Gemini API for response"
+
+def retrieve_request_message(request_data: Dict) -> str:
+    """
+    Retrieve the 'message' from the request data.
+    Args:
+        request_data (Dict): The request data dict sent to API.
+    Returns:
+        str: The message if present, otherwise raise error.
+    """
+    message = request_data.get("message", None)
+    if not message:
+        return Response({"error": "Missing message"}, status=status.HTTP_400_BAD_REQUEST)
+    return message
+
+
+def standard_response(
+    message_str: Optional[str] = None,
+    message_data: Optional[Dict] = None,
+    status_code: int = status.HTTP_200_OK,
+) -> Response:
+    """
+    Standard response format for API responses.
+    Args:
+        message_str (str): The message to return.
+        message_data (Optional[Dict]): Additional data to include in the response.
+        status_code (int): HTTP status code for the response.
+    Returns:
+        Response: A DRF Response object with the specified message and data.
+    """
+    response_data = {"message": message_str}
+    if message_data:
+        response_data.update(message_data)
+    return Response(response_data, status=status_code)
+
+
+class SinglePromptAPIView(APIView):
+    "Sends a single prompt chat input to Google Gemini API for response"
 
     def post(self, request, *_, **__):
         "Handel API request to Gemini API"
-        user_message = request.data.get("message")
-        if not user_message:
-            return Response({"error": "Missing message"}, status=status.HTTP_400_BAD_REQUEST)
 
-        api_key = os.getenv('GEMINI_API_KEY')
-        client = OpenAI(api_key=api_key, base_url="https://generativelanguage.googleapis.com/v1beta/openai/")
-
-        completion = client.chat.completions.create(
-            model="gemini-2.5-flash",
-            messages=[
-                {"role": "developer", "content": "You are a helpful assistant."},
-                {"role": "user", "content": user_message},
-            ],
+        request_message = retrieve_request_message(request.data)
+        api_response = gemini_completion_request(
+            prompt=request_message,
+            additional_messages=[{"role": "developer", "content": "You are a helpful assistant."}],
         )
-        response = completion.choices[0].message.content
-        bot_response_text = f"{response}"
-
-        return Response({"message": bot_response_text}, status=status.HTTP_200_OK)
+        return standard_response(message_str=api_response)
 
 
 class SummarizeTextAPIView(APIView):
@@ -40,24 +64,15 @@ class SummarizeTextAPIView(APIView):
 
     def post(self, request, *_, **__):
         "Handle API request to summarize text"
-        text_to_summarize = request.data.get("message")
-        if not text_to_summarize:
-            return Response({"error": "Missing message"}, status=status.HTTP_400_BAD_REQUEST)
-
-        api_key = os.getenv('GEMINI_API_KEY')
-        client = OpenAI(api_key=api_key, base_url="https://generativelanguage.googleapis.com/v1beta/openai/")
+        request_message = retrieve_request_message(request.data)
 
         prompt: str = (
             "Your task is to generate a summary of the user written input text, "
             "delimited by triple backticks. "
-            f"""\nText: ```{text_to_summarize}```"""
+            f"""\nText: ```{request_message}```"""
+        )
+        api_response = gemini_completion_request(
+            prompt=prompt,
         )
 
-        completion = client.chat.completions.create(
-            model="gemini-2.5-flash",
-            messages=[
-                {"role": "user", "content": prompt},
-            ],
-        )
-        summary = completion.choices[0].message.content
-        return Response({"message": summary}, status=status.HTTP_200_OK)
+        return standard_response(message_str=api_response)
