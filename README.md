@@ -10,7 +10,7 @@
     <span>Clone the repo.</span>
   </li>
   <li>
-    <span>[Optional] Create a venv.</span>
+    <span>[Optional] Create a venv: <code>mkvirtualenv <venv-name></code></span>
   </li>
   <li>
     <span>Install Requirements: <code>pip install -r requirements/base.txt</code></span>.
