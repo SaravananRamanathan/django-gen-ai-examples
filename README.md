@@ -1,6 +1,6 @@
 # django-gen-ai-examples
 <p>A Django project that showcases Gen AI Implementations.</p>
-<p>Demo Hosted at: https://saravananramanathan.pythonanywhere.com/home/</p>
+<p>Demo Hosted at: https://saravananramanathan.pythonanywhere.com/home/ # Disabled. Not Enough Recources to maintain.</p> 
 <p>Stack: Django4 + Vue3.</p>
 
 # Local setup:
