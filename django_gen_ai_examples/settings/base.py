@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "mail_panel",
     # 3rd party:
+    "tinymce",
     "rest_framework",
     "django_filters",
     # Apps:
@@ -214,3 +215,21 @@ DEBUG_TOOLBAR_PANELS = [
     'debug_toolbar.panels.logging.LoggingPanel',
     'debug_toolbar.panels.redirects.RedirectsPanel',
 ]
+
+TINYMCE_DEFAULT_CONFIG = {
+    # "theme": "silver",
+    "promotion": False,
+    "branding": False,
+    "height": "440px",
+    # NOTE: if width is not specified, it will auto fill width dynamically.
+    # "width": "960px",
+    "menubar": "file edit view insert format tools table help",
+    "plugins": "advlist autolink lists link image charmap print preview anchor searchreplace visualblocks code "
+               "fullscreen insertdatetime media table paste code help wordcount spellchecker",
+    "toolbar": "undo redo | bold italic underline strikethrough | fontselect fontsizeselect formatselect | "
+               "alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist checklist | "
+               "forecolor backcolor casechange permanentpen formatpainter removeformat | pagebreak | charmap "
+               "emoticons | fullscreen  preview save print | insertfile image media pageembed template link "
+               "anchor codesample | a11ycheck ltr rtl | showcomments addcomment code",
+    "custom_undo_redo_levels": 10,
+}

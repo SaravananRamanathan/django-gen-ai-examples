@@ -4,8 +4,8 @@ chat bot app api views
 
 from typing import Dict, Optional
 
-from django.template.exceptions import TemplateDoesNotExist
-from django.template.loader import render_to_string
+from django.shortcuts import get_object_or_404
+from django.template import Context, Template
 from langchain.prompts import ChatPromptTemplate
 
 # from langchain.chat_models import ChatGooglePalm # Deprecated.
@@ -16,6 +16,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from chat_bot.const import GeminiAPIConstants
+from chat_bot.models import PromptTemplate
 from chat_bot.utils import gemini_completion_request, get_gemini_api_key
 
 
@@ -25,7 +26,7 @@ class PromptBasedAPIView(APIView):
     Provides common functionality for handling prompts and responses.
     """
 
-    prompt_template_name: Optional[str] = None
+    prompt_lookup_key: Optional[str] = None
 
     def standard_response(
         self,
@@ -47,18 +48,18 @@ class PromptBasedAPIView(APIView):
             response_data.update(message_data)
         return Response(response_data, status=status_code)
 
+    def prompt_render_engine(self, prompt_template, context):
+        "By default use Django Template to render prompt"
+        template = Template(prompt_template)
+        return template.render(Context(context))
+
     def _get_rendered_prompt(self, context):
         "Loads and renders the specified prompt template."
-        if not self.prompt_template_name:
-            raise NotImplementedError("Subclasses must define 'prompt_template_name.'")
+        if not self.prompt_lookup_key:
+            raise NotImplementedError("Subclasses must define 'prompt_lookup_key.'")
 
-        try:
-            return render_to_string(self.prompt_template_name, context)
-        except TemplateDoesNotExist as e:
-            raise FileNotFoundError(
-                f"Prompt template '{self.prompt_template_name}' not found. "
-                "Ensure it exists in a directory registered in settings.TEMPLATES['DIRS']."
-            ) from e
+        prompt_obj = get_object_or_404(PromptTemplate, lookup_key=self.prompt_lookup_key)
+        return self.prompt_render_engine(prompt_obj.prompt_template, context)
 
     def make_llm_request(self, prompt: str) -> str:
         """
@@ -89,7 +90,7 @@ class PromptBasedAPIView(APIView):
 class SinglePromptAPIView(PromptBasedAPIView):
     "Sends a single prompt chat input to Google Gemini API for response"
 
-    prompt_template_name = "single_prompt.txt"
+    prompt_lookup_key = "single-prompt"
 
     def make_llm_request(self, prompt: str) -> str:
         "Overrided to add additional context to the prompt."
@@ -103,13 +104,13 @@ class SinglePromptAPIView(PromptBasedAPIView):
 class SummarizeTextAPIView(PromptBasedAPIView):
     "Summarizes the provided text using Gemini API"
 
-    prompt_template_name = "summarize_text_prompt.txt"
+    prompt_lookup_key = "summarize-text-prompt"
 
 
 class SentimentAnalysisAPIView(PromptBasedAPIView):
     "Performs sentiment analysis on the provided text using Gemini API"
 
-    prompt_template_name = "sentiment_prompt.txt"
+    prompt_lookup_key = "sentiment-prompt"
 
 
 class LCPromptTemplateAPIView(APIView):
