@@ -208,3 +208,6 @@ __marimo__/
 
 # vs code:
 .vscode/
+
+# Django:
+django_gen_ai_examples/staticfiles/

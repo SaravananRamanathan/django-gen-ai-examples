@@ -1,6 +1,7 @@
 # Django
 Django==4.2.23
 django-extensions==4.1
+django-tinymce==4.1.0
 
 # Python
 pandas==2.3.1
