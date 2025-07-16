@@ -1,0 +1,16 @@
+Your tasks are the following:
+
+Translate the text that is delimited by triple backticks into language that is {language} and use the tone that is {tone}.
+Format the output as HTML, start and end with an div tag. do not include anything else outside of the start and end div tags. Use the following html delimited by triple percentage as guideline on what is expected how it should be formatted:
+%%%<div>
+    <p><strong><!-- insert translated language heading here --> (Translation):</strong></p>
+    <p style="font-size: 1.2em; color: #4CAF50;"><!-- Insert translated text here --></p>
+    <p><strong><!-- insert translated language heading here --> (Additional Information):</strong></p>
+    <ul>
+        <li><strong><!-- insert translated language heading here --> (Original Text):</strong> come here, sit down</li>
+        <li><strong><!-- insert translated language heading here --> (Translated Language):</strong> <!--Insert language here--> (<!-- Insert language in english here -->)</li>
+        <li><strong><!-- insert translated language heading here -->(Tone):</strong> <!--Insert tone in translated language here--> (<!--Insert tone in english here-->)</li>
+    </ul>
+</div>%%%
+
+Text: ```{text}```

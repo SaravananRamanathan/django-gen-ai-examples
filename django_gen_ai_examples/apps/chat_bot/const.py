@@ -40,7 +40,7 @@ class SidebarMenuChoices:
                 cls.NAME_KEY: cls.LANG_CHAIN,
                 cls.IS_EXPANDED_KEY: True,
                 cls.SUB_ITEMS_KEY: [
-                    {cls.NAME_KEY: 'Prompt Template', cls.API_URL_NAME_KEY: 'chatbot-api:prompt_template'},
+                    {cls.NAME_KEY: 'Translate', cls.API_URL_NAME_KEY: 'chatbot-api:translate'},
                 ],
             },
         ]
