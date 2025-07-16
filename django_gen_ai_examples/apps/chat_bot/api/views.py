@@ -2,12 +2,16 @@
 chat bot app api views
 """
 
-from typing import Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional
 
 from django.shortcuts import get_object_or_404
 from django.template import Context, Template
 from django.utils.html import strip_tags
 from langchain.prompts import ChatPromptTemplate
+
+# from langchain.memory.chat_message_histories import ChatMessageHistory # Deprecated.
+from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain_core.messages import AIMessage, HumanMessage
 
 # from langchain.chat_models import ChatGooglePalm # Deprecated.
 # from langchain_community.chat_models import ChatGooglePalm # Deprecated
@@ -18,7 +22,10 @@ from rest_framework.views import APIView
 
 from chat_bot.const import GeminiAPIConstants
 from chat_bot.models import PromptTemplate
-from chat_bot.utils import gemini_completion_request, get_gemini_api_key
+from chat_bot.utils import LCConversationalAgent, gemini_completion_request, get_gemini_api_key
+
+if TYPE_CHECKING:
+    from langchain_core.chat_history import BaseChatMessageHistory
 
 
 class PromptBasedAPIView(APIView):
@@ -146,3 +153,47 @@ class LCTranslateAPIView(PromptBasedAPIView):
         )
 
         return chat.invoke(prompt).content
+
+
+class LCConversationAPIView(PromptBasedAPIView):
+    """
+    Handles stateful conversations using a LangChain Agent.
+    [Limited]Conversation history is stored in the Django session.
+    """
+
+    def post(self, request, *_, **__):
+        user_message = request.data.get("message")
+        if not user_message:
+            return Response({"error": "Missing message"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Load conversation history from the session (or start a new one)
+        raw_history = request.session.get('conversation_history', [])
+
+        # Find old Conversations, save them as LangChain message objects
+        # NOTE: These are later on passed to the Agent, thats how it gets the hisotric context
+        messages = []
+        for msg in raw_history:
+            if msg.get('type') == 'human':
+                messages.append(HumanMessage(content=msg.get('content')))
+            elif msg.get('type') == 'ai':
+                messages.append(AIMessage(content=msg.get('content')))
+
+        session_memory = ChatMessageHistory(messages=messages)
+
+        # init agent with the session history:
+        engine = LCConversationalAgent(session_memory=session_memory)
+
+        # Now we run the agent with latest user message:
+        # NOTE: At this point it already has access to our previous convos!
+        bot_response_text = engine.run_agent(user_message=user_message)
+
+        # Update/Append session history [conversation_history]:
+        updated_raw_history = []
+        chat_memory: "BaseChatMessageHistory" = engine.memory.chat_memory
+        for msg in chat_memory.messages:
+            updated_raw_history.append({'type': msg.type, 'content': msg.content})
+        request.session['conversation_history'] = updated_raw_history
+
+        # TODO handel errors.
+
+        return Response({"message": bot_response_text}, status=status.HTTP_200_OK)
