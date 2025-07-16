@@ -1,5 +1,3 @@
-const { createApp, ref, reactive, onMounted, nextTick } = Vue;
-
 const app = createApp({
   setup() {
     // State:
@@ -10,6 +8,8 @@ const app = createApp({
     const chatModels = ref(sidebarMenuChoices); // NOTE: sidebarMenuChoices is received from Django view.
     const currentModel = ref(chatModels.value[0]?.subItems[0]);
     const messages = ref([{ sender: "bot", text: "Hello! How can I help you today?" }]);
+    const currentConfigValues = ref({});
+    const isConfigModalVisible = ref(false);
 
     // Method:
     const toggleSidebar = () => {
@@ -55,6 +55,15 @@ const app = createApp({
     const selectModel = (model) => {
       currentModel.value = model;
       resetChat();
+      currentConfigValues.value = {};
+
+      // Set New Configuration Options
+      if (model.configOptions) {
+        model.configOptions.forEach((config) => {
+          currentConfigValues.value[config.key] = config.defaultValue;
+        });
+      }
+
       if (window.innerWidth < 768 && isSidebarOpen.value) {
         toggleSidebar();
       }
@@ -83,7 +92,7 @@ const app = createApp({
             "Content-Type": "application/json",
             "X-CSRFToken": getCookie("csrftoken"),
           },
-          body: JSON.stringify({ message: userInput }),
+          body: JSON.stringify({ message: userInput, ...currentConfigValues.value }),
         });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
@@ -103,6 +112,10 @@ const app = createApp({
       await scrollToBottom();
     };
 
+    const toggleConfigModal = () => {
+      isConfigModalVisible.value = !isConfigModalVisible.value;
+    };
+
     function getCookie(name) {
       let cookieValue = null;
       if (document.cookie && document.cookie !== "") {
@@ -118,6 +131,36 @@ const app = createApp({
       return cookieValue;
     }
 
+    watch(
+      currentConfigValues,
+      (newValues) => {
+        // Handling new dynamic config values added via tags.
+        if (!currentModel.value || !currentModel.value.configOptions) {
+          return;
+        }
+        currentModel.value.configOptions.forEach((config) => {
+          const configKey = config.key;
+          const selectedValue = newValues[configKey];
+
+          if (!selectedValue) {
+            return;
+          }
+
+          // Duplicate check:
+          const optionExists = config.options.some(
+            (option) => option.value === selectedValue
+          );
+
+          // New Tag:
+          if (!optionExists) {
+            config.options.push({ value: selectedValue, text: selectedValue });
+          }
+        });
+      },
+      // NOTE: not working without deep: true.
+      { deep: true }
+    );
+
     return {
       isSidebarOpen,
       hamburgerVisible,
@@ -131,7 +174,11 @@ const app = createApp({
       sendMessage,
       handleCategoryClick,
       isCategoryActive,
+      currentConfigValues,
+      isConfigModalVisible,
+      toggleConfigModal,
     };
   },
 });
+app.component("vue-single-select", VueSingleSelect);
 app.mount("#app");
