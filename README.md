@@ -13,6 +13,9 @@
     <span>[Optional] Create a venv: <code>mkvirtualenv <venv-name></code></span>
   </li>
   <li>
+    <span>[Optional] Create a <code>.env</code> using <code>.env_example</code> </span>
+  </li>
+  <li>
     <span>Install Requirements: <code>pip install -r requirements/base.txt</code></span>.
   </li>
   <li>
