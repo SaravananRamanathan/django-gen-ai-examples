@@ -16,13 +16,18 @@
         <link rel="icon" type="image/png" sizes="32x32" href="{% static "ico/favicon-32.png" %}">
         <link rel="icon" type="image/png" sizes="16x16" href="{% static "ico/favicon-16.png" %}">
         <!-- CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
         <link rel="stylesheet" href="{% static 'css/index.css' %}">
+        <link rel="stylesheet" href="{% static 'css/select2-overrides.css' %}">
+        <link href="https://fonts.googleapis.com/css2?family=Material+Icons+Outlined" rel="stylesheet">
     </head>
     <body class="{% block bodyclass %}{% endblock %}">
         {% block body %}
             {% block content %}{% endblock content %}
         {% endblock body %}
         <!-- Common 3rd party js -->
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js"></script>
         <!-- NOTE: Add Additional js to individual pages via footer_scripts. -->

@@ -20,6 +20,7 @@ class SidebarMenuChoices:
     SUB_ITEMS_KEY = "subItems"
     API_URL_KEY = "apiUrl"
     API_URL_NAME_KEY = "apiUrlName"
+    CONFIG_OPTIONS = "configOptions"
 
     @classmethod
     def choices(cls):
@@ -40,7 +41,37 @@ class SidebarMenuChoices:
                 cls.NAME_KEY: cls.LANG_CHAIN,
                 cls.IS_EXPANDED_KEY: True,
                 cls.SUB_ITEMS_KEY: [
-                    {cls.NAME_KEY: 'Translate', cls.API_URL_NAME_KEY: 'chatbot-api:translate'},
+                    {
+                        cls.NAME_KEY: 'Translate',
+                        cls.API_URL_NAME_KEY: 'chatbot-api:translate',
+                        cls.CONFIG_OPTIONS: [
+                            {
+                                'key': 'language',
+                                'label': 'Translate to Language',
+                                'type': 'select',
+                                'defaultValue': 'Tamil',
+                                'options': [
+                                    {'value': 'Tamil', 'text': 'Tamil'},
+                                    {'value': 'Hindi', 'text': 'Hindi'},
+                                    {'value': 'English', 'text': 'English'},
+                                    {'value': 'Japanese', 'text': 'Japanese'},
+                                ],
+                            },
+                            {
+                                'key': 'tone',
+                                'label': 'Tone of Voice',
+                                'type': 'select',
+                                'defaultValue': 'Sweet',
+                                'options': [
+                                    {'value': 'Sweet', 'text': 'Sweet'},
+                                    {'value': 'Formal', 'text': 'Formal'},
+                                    {'value': 'Informal', 'text': 'Informal'},
+                                    {'value': 'Rude', 'text': 'Rude'},
+                                    {'value': 'Angry', 'text': 'Angry'},
+                                ],
+                            },
+                        ],
+                    },
                 ],
             },
         ]

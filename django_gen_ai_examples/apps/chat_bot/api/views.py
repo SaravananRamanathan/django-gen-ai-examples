@@ -128,9 +128,8 @@ class LCTranslateAPIView(PromptBasedAPIView):
             self._get_prompt_tempate_str(),
         )
 
-        # TODO: make language and tone dynamic.
-        language = "Tamil"
-        tone = "Sweet"
+        language = self.request.data.get("language", "Tamil")
+        tone = self.request.data.get("tone", "Sweet")
         return prompt_template.format_messages(
             language=language,
             tone=tone,
