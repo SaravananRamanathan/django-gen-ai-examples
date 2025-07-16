@@ -233,3 +233,6 @@ TINYMCE_DEFAULT_CONFIG = {
                "anchor codesample | a11ycheck ltr rtl | showcomments addcomment code",
     "custom_undo_redo_levels": 10,
 }
+
+# TODO: move to const later. TEMP.
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")

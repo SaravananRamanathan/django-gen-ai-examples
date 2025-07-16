@@ -43,7 +43,7 @@ class SidebarMenuChoices:
                 cls.SUB_ITEMS_KEY: [
                     {
                         cls.NAME_KEY: 'Translate',
-                        cls.API_URL_NAME_KEY: 'chatbot-api:translate',
+                        cls.API_URL_NAME_KEY: 'chatbot-api:lc_translate',
                         cls.CONFIG_OPTIONS: [
                             {
                                 'key': 'language',
@@ -71,6 +71,10 @@ class SidebarMenuChoices:
                                 ],
                             },
                         ],
+                    },
+                    {
+                        cls.NAME_KEY: 'Conversation (Agent!)',
+                        cls.API_URL_NAME_KEY: 'chatbot-api:lc_conversation',
                     },
                 ],
             },
