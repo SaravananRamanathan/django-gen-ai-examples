@@ -6,6 +6,7 @@ from typing import Dict, Optional
 
 from django.shortcuts import get_object_or_404
 from django.template import Context, Template
+from django.utils.html import strip_tags
 from langchain.prompts import ChatPromptTemplate
 
 # from langchain.chat_models import ChatGooglePalm # Deprecated.
@@ -48,18 +49,19 @@ class PromptBasedAPIView(APIView):
             response_data.update(message_data)
         return Response(response_data, status=status_code)
 
-    def prompt_render_engine(self, prompt_template, context):
+    def prompt_render_engine(self, context):
         "By default use Django Template to render prompt"
-        template = Template(prompt_template)
+        template = Template(self._get_prompt_tempate_str())
+
         return template.render(Context(context))
 
-    def _get_rendered_prompt(self, context):
-        "Loads and renders the specified prompt template."
+    def _get_prompt_tempate_str(self) -> str:
         if not self.prompt_lookup_key:
             raise NotImplementedError("Subclasses must define 'prompt_lookup_key.'")
 
         prompt_obj = get_object_or_404(PromptTemplate, lookup_key=self.prompt_lookup_key)
-        return self.prompt_render_engine(prompt_obj.prompt_template, context)
+        # NOTE: convert Rich formated [with html tags.] Prompts from TinyMCE into simple text.
+        return strip_tags(prompt_obj.prompt_template or "")
 
     def make_llm_request(self, prompt: str) -> str:
         """
@@ -79,7 +81,7 @@ class PromptBasedAPIView(APIView):
             return Response({"error": "Missing message"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            prompt = self._get_rendered_prompt(context={"request_message": request_message})
+            prompt = self.prompt_render_engine(context={"request_message": request_message})
             api_response = self.make_llm_request(prompt=prompt)
         except FileNotFoundError as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -113,41 +115,35 @@ class SentimentAnalysisAPIView(PromptBasedAPIView):
     prompt_lookup_key = "sentiment-prompt"
 
 
-class LCPromptTemplateAPIView(APIView):
-    "LangChain simple prompt template using the modern ChatGoogleGenerativeAI."
+class LCTranslateAPIView(PromptBasedAPIView):
+    """
+    LangChain: translate using prompt template [ChatPromptTemplate].
+    """
 
-    def post(self, request, *_, **__):
-        "Pass prompt through LangChain PromptTemplate"
-        request_message = request.data.get("message")
-        if not request_message:
-            return Response({"error": "Missing message"}, status=status.HTTP_400_BAD_REQUEST)
+    prompt_lookup_key = "langchain-prompt-template-translate"
+
+    def prompt_render_engine(self, context: dict):
+        "Overridden to use ChatPromptTemplate Engine."
+        prompt_template = ChatPromptTemplate.from_template(
+            self._get_prompt_tempate_str(),
+        )
+
+        # TODO: make language and tone dynamic.
+        language = "Tamil"
+        tone = "Sweet"
+        return prompt_template.format_messages(
+            language=language,
+            tone=tone,
+            text=context.get("request_message"),
+        )
+
+    def make_llm_request(self, prompt: str):
+        "Overridden to use LangChain"
 
         chat = ChatGoogleGenerativeAI(
-            temperature=0.0,
+            temperature=0.3,
             model=GeminiAPIConstants.MODEL,
             google_api_key=get_gemini_api_key(),
         )
 
-        template_string = """Translate the text \
-that is delimited by triple backticks \
-into a style that is {style}. \
-text: ```{text}```
-"""
-
-        style_instruction = """Indian Tamil \
-in a calm and respectful tone
-"""
-
-        prompt_template = ChatPromptTemplate.from_template(template_string)
-
-        formatted_prompt = prompt_template.format_messages(
-            style=style_instruction,
-            text=request_message,
-        )
-
-        api_response = chat.invoke(formatted_prompt)
-
-        response_content = api_response.content
-
-        response_data = {"message": response_content}
-        return Response(response_data, status=status.HTTP_200_OK)
+        return chat.invoke(prompt).content
