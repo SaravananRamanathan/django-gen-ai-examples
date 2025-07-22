@@ -11,6 +11,13 @@ const app = createApp({
     const currentConfigValues = ref({});
     const isConfigModalVisible = ref(false);
 
+    const inputPlaceholder = computed(() => {
+      if (currentModel.value && currentModel.value.placeholder) {
+        return currentModel.value.placeholder;
+      }
+      return "Type your message here...";
+    });
+
     // Method:
     const toggleSidebar = () => {
       if (isSidebarOpen.value) {
@@ -177,6 +184,7 @@ const app = createApp({
       currentConfigValues,
       isConfigModalVisible,
       toggleConfigModal,
+      inputPlaceholder,
     };
   },
 });

@@ -54,7 +54,7 @@
 
             <!-- Chat Input -->
             <form class="chat-form" @submit.prevent="sendMessage">
-                <input type="text" id="chat-input" v-model="newMessage" placeholder="Type your message here..." autocomplete="off">
+                <input type="text" id="chat-input" v-model="newMessage" :placeholder="inputPlaceholder" autocomplete="off">
                 <!-- Dynamic config button -->
                 <button type="button" class="config-btn" @click="toggleConfigModal" v-if="currentModel.configOptions && currentModel.configOptions.length > 0" title="Model Options">
                     <span class="material-icons-outlined">settings</span>
@@ -89,7 +89,7 @@
 {{ sidebar_menu_choices|json_script:"sidebar-menu-choices" }}
 <script type="text/javascript">
     var sidebarMenuChoices = JSON.parse(document.getElementById('sidebar-menu-choices').textContent);
-    const { createApp, ref, reactive, onMounted, onUnmounted, nextTick, watch } = window.Vue;
+    const { createApp, ref, reactive, onMounted, onUnmounted, nextTick, watch, computed } = window.Vue;
 </script>
 <script type="text/javascript" src="{% static 'js/components/vue-single-select.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/apps/chat_bot/chat_bot_vue.js' %}"></script>

@@ -21,6 +21,7 @@ class SidebarMenuChoices:
     API_URL_KEY = "apiUrl"
     API_URL_NAME_KEY = "apiUrlName"
     CONFIG_OPTIONS = "configOptions"
+    PLACEHOLDER = "placeholder"
 
     @classmethod
     def choices(cls):
@@ -75,6 +76,11 @@ class SidebarMenuChoices:
                     {
                         cls.NAME_KEY: 'Conversation (Agent!)',
                         cls.API_URL_NAME_KEY: 'chatbot-api:lc_conversation',
+                    },
+                    {
+                        cls.NAME_KEY: 'YouTube Transcript',
+                        cls.API_URL_NAME_KEY: 'chatbot-api:lc_youtube_transcript',
+                        cls.PLACEHOLDER: "Enter YouTube Video ID",
                     },
                 ],
             },

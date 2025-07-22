@@ -14,4 +14,5 @@ urlpatterns = [
     path('sentiment/', views.SentimentAnalysisAPIView.as_view(), name='sentiment_analysis'),
     path('lc/translate/', views.LCTranslateAPIView.as_view(), name='lc_translate'),
     path('lc/conversation/', views.LCConversationAPIView.as_view(), name='lc_conversation'),
+    path('lc/youtube_transcript/', views.LCYouTubeTranscriptAPIView.as_view(), name='lc_youtube_transcript'),
 ]

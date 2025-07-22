@@ -2,7 +2,7 @@
 All Utility functions for the Chat Bot application.
 """
 
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from django.conf import settings
 from django.core.cache import cache
@@ -14,7 +14,14 @@ from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_openai import ChatOpenAI
 from openai import OpenAI
 
+# from langchain_community.document_loaders import YoutubeLoader # Broken. use youtube_transcript_api directly.
+# Why bother using LangChain wrappers when we can use the original library directly? This is dumb.
+from youtube_transcript_api._api import YouTubeTranscriptApi
+
 from .const import GeminiAPIConstants, SidebarMenuChoices
+
+if TYPE_CHECKING:
+    from youtube_transcript_api._transcripts import FetchedTranscript, FetchedTranscriptSnippet, TranscriptList
 
 
 def get_sidebar_menu_choices():
@@ -156,3 +163,32 @@ class LCConversationalAgent:
         """
         response = self.agent_executor.invoke({"input": user_message})
         return response.get("output", "Sorry, error happened :(")
+
+
+def get_youtube_transcript_snippets(video_id: str) -> List["FetchedTranscriptSnippet"]:
+    """
+    Fetch YouTube transcript snippets for a given video ID.
+    Args:
+        video_id (str): The ID of the YouTube video.
+    Returns:
+        List[FetchedTranscriptSnippet]: List of transcript snippets.
+        @dataclass
+        class FetchedTranscriptSnippet:
+            text: str
+            start: float
+            duration: float
+    """
+    # video_id = "_3Yvg7mP44M" # random fox news sample to test with.
+
+    # TODO: Pass http_client to bypass YT IP bans.
+    # NOTE: YT bans ip -- I have not not idea on the limit, but I just made about 3-4 req and alreayd got banned:(
+    # NOTE: Even after IP ban normal YT still works, so this is not a real ban, just a YT API ban of sorts..
+    YTTranscriptAPI = YouTubeTranscriptApi()
+    transcript_list: "TranscriptList" = YTTranscriptAPI.list(video_id)
+
+    transcript_snippets: List["FetchedTranscriptSnippet"] = []
+    for transcript in transcript_list:
+        fetched_transcript: "FetchedTranscript" = transcript.fetch(preserve_formatting=True)
+        transcript_snippets.extend(fetched_transcript.snippets)
+
+    return transcript_snippets
