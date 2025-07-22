@@ -21,6 +21,8 @@ langchain-google-genai==2.1.7 # LangChain compatible google lib
 langgraph==0.5.3
 tavily-python==0.7.9
 langchain_openai==0.3.28
+youtube-transcript-api==1.2.0
+pytube==15.0.0
 
 # Debug
 django-debug-toolbar==5.2.0

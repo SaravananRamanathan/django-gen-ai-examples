@@ -22,7 +22,12 @@ from rest_framework.views import APIView
 
 from chat_bot.const import GeminiAPIConstants
 from chat_bot.models import PromptTemplate
-from chat_bot.utils import LCConversationalAgent, gemini_completion_request, get_gemini_api_key
+from chat_bot.utils import (
+    LCConversationalAgent,
+    gemini_completion_request,
+    get_gemini_api_key,
+    get_youtube_transcript_snippets,
+)
 
 if TYPE_CHECKING:
     from langchain_core.chat_history import BaseChatMessageHistory
@@ -197,3 +202,40 @@ class LCConversationAPIView(PromptBasedAPIView):
         # TODO handel errors.
 
         return Response({"message": bot_response_text}, status=status.HTTP_200_OK)
+
+
+class LCYouTubeTranscriptAPIView(PromptBasedAPIView):
+    """
+    Handles YouTube transcript generation using LangChain.
+    Since LangChain wrapper is broken, using YouTubeTranscriptApi directly.
+    """
+
+    def post(self, request, *_, **__):
+        # youtube_url = "https://www.youtube.com/watch?v=cw0cF7icqWA" # COD Mission briefing sample
+        # video_id = "_3Yvg7mP44M" # random fox news sample
+
+        video_id = request.data.get("message")
+        if not video_id:
+            return Response({"error": "Missing video ID"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            transcript_snippets = get_youtube_transcript_snippets(video_id)
+        except Exception as e:
+            # NOTE: FE is not capable of handling/displaying errors at the moment, so we return a message.
+            return Response({"message": str(e)}, status=status.HTTP_200_OK)
+
+        if not transcript_snippets:
+            return Response(
+                {"message": "No transcript found for the provided YouTube video."}, status=status.HTTP_200_OK
+            )
+
+        full_transcript = " ".join(item.text for item in transcript_snippets)
+
+        formatted_message = (
+            f"<h4>Transcript for Video ID: {video_id}</h4>"
+            f"<div style='max-height: 400px; overflow-y: auto; border: 1px solid #444; padding: 10px; border-radius: 5px;'>"
+            f"<p>{full_transcript}</p>"
+            f"</div>"
+        )
+
+        return Response({"message": formatted_message}, status=status.HTTP_200_OK)
