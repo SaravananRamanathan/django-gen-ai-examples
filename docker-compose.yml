@@ -1,0 +1,37 @@
+volumes:
+  db-data:
+  base-data:
+
+services:
+  db:
+    restart: always
+    image: postgres:15-alpine
+    container_name: gen_ai_training_db
+    env_file:
+      - .env
+    ports:
+      - "5431:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data/
+
+  backend:
+    restart: always
+    env_file:
+      - .env
+    build:
+      context: .
+    container_name: gen_ai_training_backend
+    command: bash -c "
+      python3 /code/manage.py collectstatic --noinput &&
+      python3 /code/manage.py migrate &&
+      python3 /code/manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8220:8000"
+    labels:
+      - dev.orbstack.http-port:8220
+      - dev.orbstack.domains=chat.local
+    volumes:
+      - .:/code
+      - base-data:/data
+    depends_on:
+      - db

@@ -13,19 +13,19 @@
     <span>[Optional] Create a venv: <code>mkvirtualenv <venv-name></code></span>
   </li>
   <li>
-    <span>[Optional] Create a <code>.env</code> using <code>.env_example</code> </span>
+    <span>Create a <code>.env</code> using <code>.env_example</code>. Setup <code>.env</code> </span>
   </li>
   <li>
-    <span>Install Requirements: <code>pip install -r requirements/base.txt</code></span>.
+    <span>build docker image: <code>docker compose build</code></span>
   </li>
   <li>
-    <span>Make init Migrations: <code>python manage.py makemigrations</code></span>.
+    <span>Start containers: <code>docker compose up</code></span>
   </li>
   <li>
-    <span>Run init Migrations: <code>python manage.py migrate</code></span>.
+    <span>Import Prompt Fixtures: <code>docker compose build</code></span>
   </li>
   <li>
-    <span>Start the application using: <code>python manage.py runserver</code></span>.
+    <span>Application can be accessed at <code>chat.local</code> or <code>http://0.0.0.0:8220/</code></span>
   </li>
 </ul>
 
