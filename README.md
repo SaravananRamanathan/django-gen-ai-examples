@@ -10,9 +10,6 @@
     <span>Clone the repo.</span>
   </li>
   <li>
-    <span>[Optional] Create a venv: <code>mkvirtualenv <venv-name></code></span>
-  </li>
-  <li>
     <span>Create a <code>.env</code> using <code>.env_example</code>. Setup <code>.env</code> </span>
   </li>
   <li>
@@ -22,7 +19,11 @@
     <span>Start containers: <code>docker compose up</code></span>
   </li>
   <li>
-    <span>Import Prompt Fixtures: <code>docker compose build</code></span>
+    <span>exec into backend: <code>docker exec -it gen_ai_training_backend bash</code> and follow the steps below:</span>
+    <ul>
+      <li>Create super user: <code>./manage.py createsuperuser</code> -- you will need this to log into Django Admin.</li>
+      <li>Imprort prompt templates from Fixtures: <code>./manage.py reload_prompt_templates --skip-confirmation</code></li>
+    </ul>
   </li>
   <li>
     <span>Application can be accessed at <code>chat.local</code> or <code>http://0.0.0.0:8220/</code></span>
