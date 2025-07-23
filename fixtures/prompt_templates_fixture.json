@@ -1,0 +1,52 @@
+[
+{
+  "model": "chat_bot.prompttemplate",
+  "pk": 1,
+  "fields": {
+    "name": "test 1",
+    "lookup_key": "test-1",
+    "prompt_template": "<p>This is a test.</p>",
+    "notes": "<p>Testing dynamic prompt ingestion.</p>"
+  }
+},
+{
+  "model": "chat_bot.prompttemplate",
+  "pk": 2,
+  "fields": {
+    "name": "single prompt",
+    "lookup_key": "single-prompt",
+    "prompt_template": "<p>Your tasks are the follwing:<br>1. Process the user entered prompt delimited by triple backticks and prepare appropriate response<br>2. The response should be in HTML Format encolosed by a div tag, design HTML for Dark Theme based on entered prompt as required.<br>3. At the start of output, Do not include '```html' etc, Do not enclose the output in triple backticks.</p>\r\n<p>Prompt: ```{{ request_message }}```</p>",
+    "notes": "<p>Used by&nbsp;<em><strong>single_prompt&nbsp;</strong></em>API Endpoint.</p>"
+  }
+},
+{
+  "model": "chat_bot.prompttemplate",
+  "pk": 3,
+  "fields": {
+    "name": "Sentiment prompt",
+    "lookup_key": "sentiment-prompt",
+    "prompt_template": "<p><strong>Your tasks are the follwing:</strong><br>1. Analyze the sentiment of the user written input text delimited by triple backticks.<br>2. Find the sentiment as Possitive, Negative or Neutral. &nbsp;<br>3. Format the output as HTML, Refer to the following example enclosed in triple quotes:<br>\"\"\"<code>&lt;div&gt;&lt;div style=\"border: 1px solid #dcdcdc; padding: 20px; border-radius: 8px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #fdfdfd;\"&gt;<br>&nbsp; &nbsp; &lt;h2 style=\"color: #333; margin-bottom: 15px;\"&gt;Sentiment Analysis Result&lt;/h2&gt;<br>&nbsp; &nbsp; &lt;p style=\"font-size: 1.1em; color: #555;\"&gt;The sentiment of the input text is: &lt;strong style=\"color: #28a745;\"&gt;Positive&lt;/strong&gt;&lt;/p&gt;<br>&nbsp; &nbsp;&nbsp;<br>&nbsp; &nbsp; &lt;div style=\"margin-top: 25px; padding: 15px; background-color: #e9ecef; border-radius: 6px; border: 1px solid #ced4da;\"&gt;<br>&nbsp; &nbsp; &nbsp; &nbsp; &lt;h4 style=\"color: #495057; margin-bottom: 10px;\"&gt;Sentiment Data (JSON Format):&lt;/h4&gt;<br>&nbsp; &nbsp; &nbsp; &nbsp; &lt;pre style=\"color: #008000; font-weight: bold; font-family: 'Consolas', 'Monaco', monospace; white-space: pre-wrap; margin: 0; padding: 0; font-size: 0.95em;\"&gt;{<br>&nbsp; &nbsp; \"displayText\": \"Positive\",<br>&nbsp; &nbsp; \"possitive\": true,<br>&nbsp; &nbsp; \"negative\": false,<br>&nbsp; &nbsp; \"neutral\": false<br>}&lt;/pre&gt;<br>&nbsp; &nbsp; &lt;/div&gt;<br>&lt;/div&gt;&lt;/div&gt;</code>\"\"\"<br>4. The HTML's code block should change color based on the sentiment.<br>5. I just want direct html string starting from div tag, do not include '```html' at start etc.,</p>\r\n<p><strong>Text: </strong>```{{ request_message }}```</p>",
+    "notes": "<p>Sentiment Analysis</p>"
+  }
+},
+{
+  "model": "chat_bot.prompttemplate",
+  "pk": 4,
+  "fields": {
+    "name": "Summarize text prompt",
+    "lookup_key": "summarize-text-prompt",
+    "prompt_template": "<p><strong>Your tasks are the follwing:</strong><br>1. generate a summary of the user written input text delimited by triple backticks.<br>2. Format the output as HTML with outter div tag and child tas as nessary. I want direct html string starting from div tag, no need to include ```html etc.</p>\r\n<p><strong>Text:</strong> ```{{ request_message }}```</p>",
+    "notes": "<p>An Simple Prompt Used to Summarize the given user input text.</p>"
+  }
+},
+{
+  "model": "chat_bot.prompttemplate",
+  "pk": 5,
+  "fields": {
+    "name": "LangChain Prompt Template translate",
+    "lookup_key": "langchain-prompt-template-translate",
+    "prompt_template": "<p><strong>Your tasks are the following:</strong></p>\r\n<ol>\r\n<li><strong>Translate the text</strong> that is delimited by triple backticks<strong> </strong>into language that is {language} and use the tone that is {tone}.</li>\r\n<li>Format the <strong>output as HTML</strong>, start and end with an <strong>div&nbsp;</strong>tag. do not include anything else outside of the start and end div tags. Use the following html delimited by triple percentage as guideline on what is expected how it should be formatted:<br>%%%<code>&lt;div&gt;<br>&nbsp; &nbsp; &lt;p&gt;&lt;strong&gt;&lt;!-- insert translated language heading here --&gt; (Translation):&lt;/strong&gt;&lt;/p&gt;<br>&nbsp; &nbsp; &lt;p style=\"font-size: 1.2em; color: #4CAF50;\"&gt;&lt;!-- Insert translated text here --&gt;&lt;/p&gt;<br>&nbsp; &nbsp; &lt;p&gt;&lt;strong&gt;&lt;!-- insert translated language heading here --&gt; (Additional Information):&lt;/strong&gt;&lt;/p&gt;<br>&nbsp; &nbsp; &lt;ul&gt;<br>&nbsp; &nbsp; &nbsp; &nbsp; &lt;li&gt;&lt;strong&gt;&lt;!-- insert translated language heading here --&gt; (Original Text):&lt;/strong&gt; come here, sit down&lt;/li&gt;<br>&nbsp; &nbsp; &nbsp; &nbsp; &lt;li&gt;&lt;strong&gt;&lt;!-- insert translated language heading here --&gt; (Translated Language):&lt;/strong&gt; &lt;!--Insert language here--&gt; (&lt;!-- Insert language in english here --&gt;)&lt;/li&gt;<br>&nbsp; &nbsp; &nbsp; &nbsp; &lt;li&gt;&lt;strong&gt;&lt;!-- insert translated language heading here --&gt;(Tone):&lt;/strong&gt; &lt;!--Insert tone in translated language here--&gt; (&lt;!--Insert tone in english here--&gt;)&lt;/li&gt;<br>&nbsp; &nbsp; &lt;/ul&gt;<br>&lt;/div&gt;</code>%%%</li>\r\n<li>Do not include \"```html\" at the start of your output message.</li>\r\n</ol>\r\n<p><strong>Text:</strong> ```{text}```</p>",
+    "notes": "<p>This template is used by&nbsp;ChatPromptTemplate, to dynamically insert context as needed.</p>"
+  }
+}
+]
