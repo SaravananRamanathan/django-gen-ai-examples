@@ -44,7 +44,7 @@
         </Transition>
 
         <!-- The Chat Container -->
-        <div class="chat-container">
+        <div class="chat-container" v-if="!currentModel.uiType || currentModel.uiType === 'chat'">
             <div class="chat-messages" ref="chatMessagesContainer">
                 <div v-for="(message, index) in messages" :key="index"
                      :class="['message', message.sender]"
@@ -62,6 +62,61 @@
                 <button type="submit">Send</button>
             </form>
         </div>
+
+        <!-- Search/Table Container -->
+        <div class="search-table-container" v-else-if="currentModel.uiType === 'search-table'" v-cloak>
+            <!-- Simple Results Table -->
+            <div class="table-wrapper">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Word</th>
+                            <th>Meanings</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-if="isLoading">
+                            <td colspan="2" class="state-cell">
+                                <div class="loading-spinner"></div>
+                            </td>
+                        </tr>
+
+                        <tr v-else-if="!searchResults.length && searchQuery">
+                            <td colspan="2" class="state-cell">
+                                <div class="no-results">
+                                    No results found for "<span v-text="searchQuery"></span>"
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr v-else-if="!searchResults.length && !searchQuery">
+                            <td colspan="2" class="state-cell">
+                                <div class="initial-state">
+                                    Please type in the search bar to see results.
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr v-for="result in searchResults" :key="result.term" v-else>
+                            <td v-text="result.term"></td>
+                            <td>
+                                <ul>
+                                    <li v-for="item in result.meanings" :key="index">
+                                        <strong v-text="`${item.part_of_speech}: `"></strong> <span v-text="item.definition"></span>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <!-- Search Bar -->
+            <div class="search-bar">
+                <input type="text" v-model="searchQuery" :placeholder="inputPlaceholder" autocomplete="off">
+            </div>
+        </div>
+
+
     </div>
 
     <!-- Dynamic config Pop-up modal -->
