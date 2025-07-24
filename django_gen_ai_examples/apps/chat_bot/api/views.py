@@ -17,17 +17,21 @@ from langchain_core.messages import AIMessage, HumanMessage
 # from langchain_community.chat_models import ChatGooglePalm # Deprecated
 from langchain_google_genai.chat_models import ChatGoogleGenerativeAI
 from rest_framework import status
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from chat_bot.const import GeminiAPIConstants
-from chat_bot.models import PromptTemplate
+from chat_bot.models import DictionaryWord, PromptTemplate
 from chat_bot.utils import (
     LCConversationalAgent,
     gemini_completion_request,
     get_gemini_api_key,
     get_youtube_transcript_snippets,
 )
+
+from .filters import DictionaryWordFilter
+from .serializers import DictionaryWordSerializer
 
 if TYPE_CHECKING:
     from langchain_core.chat_history import BaseChatMessageHistory
@@ -239,3 +243,14 @@ class LCYouTubeTranscriptAPIView(PromptBasedAPIView):
         )
 
         return Response({"message": formatted_message}, status=status.HTTP_200_OK)
+
+
+class DictionarySearchAPIView(ListAPIView):
+    """
+    DictionaryWord List API View.
+    """
+
+    serializer_class = DictionaryWordSerializer
+    queryset = DictionaryWord.objects.all().prefetch_related("meanings")
+    # search_fields = ["^term"] # Not feasible for semantic search.
+    filterset_class = DictionaryWordFilter

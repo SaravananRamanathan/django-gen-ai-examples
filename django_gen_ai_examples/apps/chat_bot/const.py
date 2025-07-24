@@ -13,6 +13,7 @@ class SidebarMenuChoices:
     # Main categories:
     COMPLETIONS = "Completions"
     LANG_CHAIN = "LangChain"
+    SEMANTIC_SEARCH = "Semantic Search"
 
     # JSON keys for sidebar menu items (Used by FE-Vue):
     NAME_KEY = "name"
@@ -22,6 +23,7 @@ class SidebarMenuChoices:
     API_URL_NAME_KEY = "apiUrlName"
     CONFIG_OPTIONS = "configOptions"
     PLACEHOLDER = "placeholder"
+    UI_TYPE = "uiType"
 
     @classmethod
     def choices(cls):
@@ -81,6 +83,18 @@ class SidebarMenuChoices:
                         cls.NAME_KEY: 'YouTube Transcript',
                         cls.API_URL_NAME_KEY: 'chatbot-api:lc_youtube_transcript',
                         cls.PLACEHOLDER: "Enter YouTube Video ID",
+                    },
+                ],
+            },
+            {
+                cls.NAME_KEY: cls.SEMANTIC_SEARCH,
+                cls.IS_EXPANDED_KEY: True,
+                cls.SUB_ITEMS_KEY: [
+                    {
+                        cls.NAME_KEY: "Dictionary Search",
+                        cls.API_URL_NAME_KEY: "chatbot-api:dictionary_search",
+                        cls.PLACEHOLDER: "Search for a word",
+                        cls.UI_TYPE: "search-table",
                     },
                 ],
             },

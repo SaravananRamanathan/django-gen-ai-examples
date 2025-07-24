@@ -10,6 +10,9 @@ const app = createApp({
     const messages = ref([{ sender: "bot", text: "Hello! How can I help you today?" }]);
     const currentConfigValues = ref({});
     const isConfigModalVisible = ref(false);
+    const searchQuery = ref("");
+    const searchResults = ref([]);
+    const isLoading = ref(false);
 
     const inputPlaceholder = computed(() => {
       if (currentModel.value && currentModel.value.placeholder) {
@@ -63,6 +66,9 @@ const app = createApp({
       currentModel.value = model;
       resetChat();
       currentConfigValues.value = {};
+      searchQuery.value = "";
+      searchResults.value = [];
+      isLoading.value = false;
 
       // Set New Configuration Options
       if (model.configOptions) {
@@ -138,6 +144,32 @@ const app = createApp({
       return cookieValue;
     }
 
+    let debounceTimer;
+    const fetchSearchResults = async (query) => {
+      if (!query) {
+        searchResults.value = [];
+        return;
+      }
+      isLoading.value = true;
+      try {
+        const response = await fetch(`${currentModel.value.apiUrl}?term=${encodeURIComponent(query)}`);
+        if (!response.ok) throw new Error('Network response error');
+        searchResults.value = await response.json();
+      } catch (error) {
+        console.error("Failed to fetch search results:", error);
+        searchResults.value = [];
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
+    const debouncedFetch = (query) => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        fetchSearchResults(query);
+      }, 300); // NOTE: Delay needed, to avoid API Spam.
+    };
+
     watch(
       currentConfigValues,
       (newValues) => {
@@ -168,6 +200,12 @@ const app = createApp({
       { deep: true }
     );
 
+    watch(searchQuery, (newQuery) => {
+      if (currentModel.value.uiType === 'search-table') {
+        debouncedFetch(newQuery);
+      }
+    });
+
     return {
       isSidebarOpen,
       hamburgerVisible,
@@ -185,6 +223,9 @@ const app = createApp({
       isConfigModalVisible,
       toggleConfigModal,
       inputPlaceholder,
+      searchQuery,
+      searchResults,
+      isLoading,
     };
   },
 });
