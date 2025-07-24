@@ -23,6 +23,7 @@
     <ul>
       <li>Create super user: <code>./manage.py createsuperuser</code> -- you will need this to log into Django Admin.</li>
       <li>Imprort prompt templates from Fixtures: <code>./manage.py reload_prompt_templates --skip-confirmation</code></li>
+      <li>Load data from Eng dictionary fixture: <code>./manage.py loaddata ./fixtures/eng_dictionary_fixture.json</code></li>
     </ul>
   </li>
   <li>
