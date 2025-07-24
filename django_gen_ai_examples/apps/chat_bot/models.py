@@ -2,6 +2,8 @@
 All models realted to chat_bot App.
 """
 
+from typing import TYPE_CHECKING
+
 from django.db import models
 
 
@@ -33,3 +35,41 @@ class PromptTemplate(models.Model):
 
         verbose_name = "Prompt Template"
         verbose_name_plural = "Prompt Templates"
+
+
+class DictionaryWord(models.Model):
+    """
+    DictionaryWord represents a single word in english dictionary.
+    """
+
+    term = models.CharField(max_length=255, primary_key=True)
+    synonyms = models.JSONField(default=list, blank=True, help_text="A list of synonym strings(words).")
+
+    if TYPE_CHECKING:
+        meanings: models.QuerySet["DictionaryWordMeaning"]
+
+    def __str__(self):
+        return self.term
+
+    class Meta:
+        ordering = ["term"]
+        verbose_name = "Dictionary Word"
+        verbose_name_plural = "Dictionary Words"
+
+
+class DictionaryWordMeaning(models.Model):
+    """
+    Meaning of a word in the english dictionary.
+    A "word" can have multiple meanings.
+    """
+
+    word = models.ForeignKey(DictionaryWord, on_delete=models.CASCADE, related_name="meanings")
+    part_of_speech = models.CharField(max_length=50, blank=True, null=True)  # e.g., noun, verb, adjective
+    definition = models.TextField()  # meaning of the word
+
+    def __str__(self):
+        return f"{self.word.term} ({self.part_of_speech}): {self.definition[:50]}..."
+
+    class Meta:
+        verbose_name = "Dictionary Meaning"
+        verbose_name_plural = "Dictionary Meanings"
