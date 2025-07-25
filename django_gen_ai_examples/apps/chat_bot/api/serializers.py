@@ -23,7 +23,8 @@ class DictionaryWordSerializer(serializers.ModelSerializer):
     """
 
     meanings = DictionaryWordMeaningSerializer(many=True, read_only=True)
+    _distance = serializers.FloatField(read_only=True)  # Annotated field: semantic search distance.
 
     class Meta:
         model = DictionaryWord
-        fields = ["term", "synonyms", "meanings"]
+        fields = ["term", "synonyms", "meanings", "_distance"]
