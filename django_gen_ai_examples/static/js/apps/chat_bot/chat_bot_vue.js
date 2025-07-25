@@ -152,7 +152,9 @@ const app = createApp({
       }
       isLoading.value = true;
       try {
-        const response = await fetch(`${currentModel.value.apiUrl}?term=${encodeURIComponent(query)}`);
+        // TODO: list of URL param keywords [ex: semantic_term, term] for search needs to come from Backend.
+        // TODO: in FE, we need to switch between semantic_term and term based on a toggle.
+        const response = await fetch(`${currentModel.value.apiUrl}?semantic_term=${encodeURIComponent(query)}`);
         if (!response.ok) throw new Error('Network response error');
         searchResults.value = await response.json();
       } catch (error) {

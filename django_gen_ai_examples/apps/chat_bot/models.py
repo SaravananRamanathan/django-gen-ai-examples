@@ -5,6 +5,7 @@ All models realted to chat_bot App.
 from typing import TYPE_CHECKING
 
 from django.db import models
+from pgvector.django import VectorField
 
 
 class PromptTemplate(models.Model):
@@ -44,6 +45,12 @@ class DictionaryWord(models.Model):
 
     term = models.CharField(max_length=255, primary_key=True)
     synonyms = models.JSONField(default=list, blank=True, help_text="A list of synonym strings(words).")
+
+    # Vector Field.
+    # The more the dimensions, the more accurate the embedding (?) , more features (?)
+    # for all-MiniLM-L6-v2 model, word_embedding_dimension is 384, so we can't go beyond that (?)
+    embedding = VectorField(dimensions=384, null=True, blank=True)
+    # TODO: create embedding when new DictionaryWord is created.
 
     if TYPE_CHECKING:
         meanings: models.QuerySet["DictionaryWordMeaning"]
