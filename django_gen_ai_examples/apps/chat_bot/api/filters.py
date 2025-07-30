@@ -2,11 +2,15 @@
 Chat Bot API Filters
 """
 
+import logging
+
 import django_filters
 from pgvector.django import L2Distance
 from sentence_transformers import SentenceTransformer
 
 from chat_bot.models import DictionaryWord
+
+logger = logging.getLogger(__name__)
 
 # Question: will the model be loaded into memory? downloaded every time?
 EMBEDDING_MODEL = SentenceTransformer("all-MiniLM-L6-v2")
@@ -26,8 +30,7 @@ class DictionaryWordFilter(django_filters.FilterSet):
         Filter DictionaryWord objects by semantic similarity to the given term.
         Uses the SentenceTransformer model to generate embeddings and filter results.
         """
-        # TODO: add logging instead of print statements.
-        print("Filtering by semantic term:", value)
+        logger.info("Filtering by semantic term: %s", value)
         if not value:
             return queryset
 

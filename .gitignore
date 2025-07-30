@@ -214,3 +214,7 @@ django_gen_ai_examples/staticfiles/
 
 # Pre Process data folder - ignore all files
 pre_process_data/
+
+# Logs
+logs/
+*.log

@@ -254,3 +254,53 @@ TINYMCE_DEFAULT_CONFIG = {
 
 # TODO: move to const later. TEMP.
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
+
+#  _                       _
+# | |                     (_)
+# | |     ___   __ _  __ _ _ _ __   __ _
+# | |    / _ \ / _` |/ _` | | '_ \ / _` |
+# | |___| (_) | (_| | (_| | | | | | (_| |
+# \_____/\___/ \__, |\__, |_|_| |_|\__, |
+#               __/ | __/ |         __/ |
+#              |___/ |___/         |___/
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+        'standard': {
+            'format': '%(asctime)s [%(levelname)s] %(name)s line %(lineno)d: %(message)s',
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'stream': sys.stdout,
+            'formatter': 'standard',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+    },
+}
