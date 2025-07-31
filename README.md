@@ -30,5 +30,11 @@
   <li>
     <span>Application can be accessed at <code>chat.local</code> or <code>http://0.0.0.0:8220/</code></span>
   </li>
+  <li>
+    <span>Airflow can be accessed at <code>airflow.local</code> or <code>http://0.0.0.0:8080/</code> default credentails: <code>admin/admin</code></span>
+  </li>
+  <li>
+    <span>Flower dashboard can be accessed at <code>flower.local</code> or <code>http://0.0.0.0:5555/</code></span>
+  </li>
 </ul>
 

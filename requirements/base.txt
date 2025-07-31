@@ -2,11 +2,14 @@
 Django==4.2.23
 django-extensions==4.1
 django-tinymce==4.1.0
+django-celery-beat==2.8.1
+django-redis==6.0.0
 
 # Python
 pandas==2.3.1
 python-dotenv==1.1.1
-psycopg2==2.9.9
+# psycopg2==2.9.9 # using psycopg2-binary for easier installation.
+psycopg2-binary==2.9.10
 pgvector==0.4.1
 
 # REST framework
@@ -35,3 +38,8 @@ django-mail-panel==4.0.4
 black==25.1.0
 isort==6.0.1
 flake8==7.3.0
+
+# Airflow Related
+# NOTE: Airflow itself will be installed in the Dockerfile.
+redis==6.2.0
+celery==5.5.3

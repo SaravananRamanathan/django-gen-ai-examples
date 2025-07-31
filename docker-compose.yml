@@ -2,31 +2,59 @@ volumes:
   db-data:
   base-data:
 
+x-airflow-base: &airflow-base
+  build: .
+  user: "${AIRFLOW_UID:-50000}:0"
+  environment:
+    - PYTHONPATH=/code
+    - AIRFLOW_HOME=/code/airflow
+    - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+    - AIRFLOW__CORE__LOAD_EXAMPLES=false
+    - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:postgres@db:5432/airflow
+    - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+    - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://postgres:postgres@db:5432/airflow
+    - AIRFLOW__CORE__FERNET_KEY=d6s_hR8mFOG_9mV-wXYhOr-FLOy6Wx1uVJKu5hP_wCU=
+    - AIRFLOW__CORE__EXECUTION_API_SERVER_URL=http://airflow-api-server:8080/execution/
+  volumes:
+    - .:/code
+    - base-data:/data
+  restart: always
+
 services:
   db:
     restart: always
     image: pgvector/pgvector:pg15
     container_name: gen_ai_training_db
-    env_file:
-      - .env
-    ports:
-      - "5439:5432"
-    volumes:
-      - db-data:/var/lib/postgresql/data/
+    env_file: [".env"]
+    ports: ["5439:5432"]
+    volumes: ["db-data:/var/lib/postgresql/data/"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: gen_ai_training_redis
+    ports: ["6379:6379"]
+    command: redis-server --appendonly yes
+    volumes: ["base-data:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   backend:
-    restart: always
-    env_file:
-      - .env
-    build:
-      context: .
+    build: .
     container_name: gen_ai_training_backend
-    command: bash -c "
-      python3 /code/manage.py collectstatic --noinput &&
-      python3 /code/manage.py migrate &&
-      python3 /code/manage.py runserver 0.0.0.0:8000"
-    ports:
-      - "8220:8000"
+    user: "${AIRFLOW_UID:-50000}:0"
+    environment:
+      - PYTHONPATH=/code
+    command: bash -c "python3 /code/manage.py collectstatic --noinput && python3 /code/manage.py migrate && python3 /code/manage.py runserver 0.0.0.0:8000"
+    ports: ["8220:8000"]
     labels:
       - dev.orbstack.http-port:8220
       - dev.orbstack.domains=chat.local
@@ -34,4 +62,104 @@ services:
       - .:/code
       - base-data:/data
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+
+  airflow-init:
+    <<: *airflow-base
+    container_name: airflow-init
+    entrypoint: /bin/bash
+    command: 
+      - -c
+      - |
+        echo "Waiting for database..."
+        while ! pg_isready -h db -p 5432 -U postgres; do
+          echo "Database is unavailable - sleeping"
+          sleep 2
+        done
+        echo "Database is up - creating airflow database"
+        PGPASSWORD=postgres createdb -h db -U postgres airflow 2>/dev/null || echo "Database airflow already exists"
+        echo "Running airflow db migrate"
+        airflow db migrate
+    restart: "no"
+    environment:
+      - PYTHONPATH=/code
+      - AIRFLOW_HOME=/code/airflow
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__CORE__LOAD_EXAMPLES=false
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:postgres@db:5432/airflow
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://postgres:postgres@db:5432/airflow
+      - AIRFLOW__CORE__FERNET_KEY=d6s_hR8mFOG_9mV-wXYhOr-FLOy6Wx1uVJKu5hP_wCU=
+      - AIRFLOW__CORE__EXECUTION_API_SERVER_URL=http://airflow-api-server:8080/execution/
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  airflow-api-server:
+    <<: *airflow-base
+    container_name: airflow-api-server
+    command: airflow api-server
+    ports: ["8080:8080"]
+    labels:
+      - dev.orbstack.http-port:8080
+      - dev.orbstack.domains=airflow.local
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      airflow-init: { condition: service_completed_successfully }
+
+  airflow-scheduler:
+    <<: *airflow-base
+    container_name: airflow-scheduler
+    command: airflow scheduler
+    depends_on:
+      airflow-api-server: { condition: service_healthy }
+
+  airflow-worker:
+    <<: *airflow-base
+    container_name: airflow-worker
+    command: celery --app airflow.providers.celery.executors.celery_executor.app worker
+    environment:
+      - PYTHONPATH=/code
+      - AIRFLOW_HOME=/code/airflow
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__CORE__LOAD_EXAMPLES=false
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:postgres@db:5432/airflow
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://postgres:postgres@db:5432/airflow
+      - AIRFLOW__CORE__FERNET_KEY=d6s_hR8mFOG_9mV-wXYhOr-FLOy6Wx1uVJKu5hP_wCU=
+      - AIRFLOW__CORE__EXECUTION_API_SERVER_URL=http://airflow-api-server:8080/execution/
+      - AIRFLOW__CELERY__WORKER_CONCURRENCY=2
+    depends_on:
+      airflow-api-server: { condition: service_healthy }
+
+  airflow-dag-processor:
+    <<: *airflow-base
+    container_name: airflow-dag-processor
+    command: airflow dag-processor
+    depends_on:
+      airflow-api-server: { condition: service_healthy }
+
+  airflow-triggerer:
+    <<: *airflow-base
+    container_name: airflow-triggerer
+    command: airflow triggerer
+    depends_on:
+      airflow-api-server: { condition: service_healthy }
+
+  flower:
+    <<: *airflow-base
+    container_name: airflow-flower
+    command: celery --app airflow.providers.celery.executors.celery_executor.app flower
+    ports:
+      - "5555:5555"
+    labels:
+      - dev.orbstack.http-port:5555
+      - dev.orbstack.domains=flower.local
+    depends_on:
+      airflow-api-server: { condition: service_healthy }
