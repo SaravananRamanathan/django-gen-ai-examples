@@ -12,9 +12,6 @@ from chat_bot.models import DictionaryWord
 
 logger = logging.getLogger(__name__)
 
-# Question: will the model be loaded into memory? downloaded every time?
-EMBEDDING_MODEL = SentenceTransformer("all-MiniLM-L6-v2")
-
 
 class DictionaryWordFilter(django_filters.FilterSet):
     """
@@ -33,6 +30,14 @@ class DictionaryWordFilter(django_filters.FilterSet):
         logger.info("Filtering by semantic term: %s", value)
         if not value:
             return queryset
+
+        # temp disable semantic search
+        return queryset[:10]
+
+        # need a better place to load this model from a file path.
+        # setting this globally got really annoying, as it was loading the model every time django reloads.
+        # So, until then semantic search is disabled.
+        EMBEDDING_MODEL = SentenceTransformer("all-MiniLM-L6-v2")
 
         # Generate embedding for the input value ,NOTE: AKA the term that we are trying to find similar terms for.
         # value is our Input term, e.g., "cat" , now we need to find terms similar to cat!

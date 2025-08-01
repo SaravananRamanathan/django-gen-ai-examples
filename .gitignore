@@ -218,3 +218,6 @@ pre_process_data/
 # Logs
 logs/
 *.log
+
+# secret access keys, json key files etc.
+secret_keys/

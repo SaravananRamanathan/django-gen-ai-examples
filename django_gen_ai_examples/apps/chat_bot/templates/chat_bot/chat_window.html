@@ -8,7 +8,7 @@
     <!-- Collapsible Sidebar -->
     <div class="sidebar" :class="{ 'open': isSidebarOpen }">
         <div class="sidebar-header">
-            <h3>Models</h3>
+            <h3>Category</h3>
             <div class="close-sidebar-btn" @click="toggleSidebar">←</div>
         </div>
         <ul>
@@ -30,6 +30,15 @@
                 </ul>
             </template>
         </ul>
+        <!-- Footer with Logout Button -->
+        {% if user.is_authenticated %}
+            <div class="sidebar-footer">
+                <a href="{% url 'account_logout' %}" class="logout-btn">
+                    <span class="material-icons-outlined">logout</span>
+                    Logout
+                </a>
+            </div>
+        {% endif %}
     </div>
 
     <!-- Main Content -->
@@ -124,6 +133,11 @@
             <div class="search-bar">
                 <input type="text" v-model="searchQuery" :placeholder="inputPlaceholder" autocomplete="off">
             </div>
+        </div>
+
+        <!-- Calendar RAG -->
+        <div class="search-table-container" v-else-if="currentModel.uiType === 'calendar-rag'" v-cloak>
+            <h1>TODO.</h1>
         </div>
 
 

@@ -4,6 +4,7 @@ django-extensions==4.1
 django-tinymce==4.1.0
 django-celery-beat==2.8.1
 django-redis==6.0.0
+django-allauth==65.10.0
 
 # Python
 pandas==2.3.1

@@ -1,0 +1,15 @@
+{% extends "account/base.html" %}
+{% load i18n %}
+{% load allauth %}
+
+{% block auth_content %}
+    <h1>{% trans "Sign In" %}</h1>
+    <p>{% blocktrans with provider_name=account.get_provider.name site_name=site.name %}You are about to sign in using your Google account. Please confirm to continue.{% endblocktrans %}</p>
+
+    <form method="post">
+        {% csrf_token %}
+        {% element button type="submit" %}
+            {% trans "Continue" %}
+        {% endelement %}
+    </form>
+{% endblock auth_content %}
