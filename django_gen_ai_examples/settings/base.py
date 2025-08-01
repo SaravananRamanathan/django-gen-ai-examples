@@ -341,6 +341,14 @@ SOCIALACCOUNT_PROVIDERS = {
         # Airflow need access the data offline later.
         'AUTH_PARAMS': {
             'access_type': 'offline',
+            'prompt': 'consent', # Force re-consent at least while testing.
         }
     }
 }
+
+SOCIALACCOUNT_STORE_TOKENS = True
+
+# dev domain whitelist:
+CSRF_TRUSTED_ORIGINS = ["https://corgi-obliging-goshawk.ngrok-free.app",]
+CSRF_ALLOWED_ORIGINS = ["https://corgi-obliging-goshawk.ngrok-free.app",]
+CORS_ORIGINS_WHITELIST = ["https://corgi-obliging-goshawk.ngrok-free.app",]
