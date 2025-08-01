@@ -20,6 +20,7 @@
         <link rel="stylesheet" href="{% static 'css/index.css' %}">
         <link rel="stylesheet" href="{% static 'css/select2-overrides.css' %}">
         <link href="https://fonts.googleapis.com/css2?family=Material+Icons+Outlined" rel="stylesheet">
+        {% block head %}{% endblock head %}
     </head>
     <body class="{% block bodyclass %}{% endblock %}">
         {% block body %}

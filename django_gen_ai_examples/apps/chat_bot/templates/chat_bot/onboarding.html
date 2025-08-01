@@ -1,0 +1,18 @@
+{% extends "account/base.html" %}
+{% load static %}
+{% load socialaccount %}
+
+{% block title %}Welcome | {% endblock %}
+
+{% block auth_content %}
+    <h1>Welcome to the GenAI Training Application</h1>
+    <p class="lead">
+        To get started, please connect your Google Account.
+        <br>
+        This will allow the application to access your google calendar events [Readonly].
+    </p>
+    <hr style="border-color: #444; margin: 20px 0;">
+    <a href="{% provider_login_url 'google' %}" class="btn">
+        Sign In with Google
+    </a>
+{% endblock auth_content %}

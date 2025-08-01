@@ -36,6 +36,8 @@ html, body {
     background-color: var(--sidebar-bg);
     width: var(--sidebar-width);
     position: fixed;
+    display: flex;
+    flex-direction: column; 
     top: 0;
     left: 0;
     height: 100dvh;
@@ -77,7 +79,13 @@ html, body {
 .close-sidebar-btn:hover {
     color: #fff;
 }
-.sidebar ul { list-style: none; padding: 0; margin: 0; }
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+    overflow-y: auto;
+}
 .sidebar li {
     padding: 15px 10px;
     color: var(--text-color);
@@ -436,4 +444,44 @@ html, body {
 .no-results span {
     font-weight: bold;
     color: #aaa;
+}
+
+
+/* --- sidebar logout buton --- */
+.sidebar-footer {
+    flex-shrink: 0;
+    padding: 20px 30px 20px 0;
+    border-top: 1px solid #444;
+}
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 10px 15px;
+    
+    background-color: #333;
+    color: var(--text-color);
+    border: 1px solid #444;
+    border-radius: 5px;
+    
+    text-decoration: none;
+    font-weight: bold;
+    font-family: inherit;
+    font-size: 1rem;
+    
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.logout-btn:hover {
+    background-color: var(--brand-color);
+    color: #fff;
+    border-color: var(--brand-color);
+}
+
+.logout-btn .material-icons-outlined {
+    margin-right: 10px;
+    font-size: 20px;
 }

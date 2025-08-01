@@ -1,0 +1,25 @@
+{% extends "account/base.html" %}
+{% load i18n %}
+{% load allauth %}
+
+{% block title %}{% trans "Sign Out" %}{% endblock title %}
+
+{% block auth_content %}
+    <h1>{% trans "Sign Out" %}</h1>
+
+    {% if user.is_authenticated %}
+        <p>
+            {% trans "You are signed in as" %} <strong>{{ user.email }}</strong>.
+        </p>
+    {% endif %}
+
+    <p>{% trans 'Are you sure you want to sign out?' %}</p>
+
+    {% url 'account_logout' as action_url %}
+    <form method="post" action="{{ action_url }}">
+        {% csrf_token %}
+                {% element button type="submit" %}
+            {% trans "Sign Out" %}
+        {% endelement %}
+    </form>
+{% endblock auth_content %}

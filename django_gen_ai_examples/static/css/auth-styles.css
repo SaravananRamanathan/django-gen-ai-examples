@@ -1,0 +1,99 @@
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100%;
+}
+
+.auth-card {
+    background-color: var(--sidebar-bg);
+    padding: 30px 40px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    width: 100%;
+    max-width: 450px;
+    text-align: center;
+}
+
+.auth-card h1 {
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    color: #fff;
+}
+
+.auth-card p {
+    color: #ccc;
+    margin-bottom: 25px;
+}
+
+/* Form Styling */
+.auth-card form {
+    text-align: left;
+}
+
+.auth-card form p {
+    margin-bottom: 15px;
+}
+
+.auth-card label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    color: #ccc;
+}
+
+.auth-card input[type="text"],
+.auth-card input[type="email"],
+.auth-card input[type="password"] {
+    width: 100%;
+    padding: 10px 12px;
+    background-color: var(--input-bg);
+    border: 1px solid #555;
+    border-radius: 5px;
+    color: var(--text-color);
+    font-family: inherit;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.auth-card input:focus {
+    outline: none;
+    border-color: var(--brand-color);
+}
+
+.auth-card .btn,
+.auth-card button {
+    display: inline-block;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+    background-color: var(--brand-color);
+    color: #fff;
+    font-weight: bold;
+    font-size: 1rem;
+    text-align: center;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.auth-card .btn:hover,
+.auth-card button:hover {
+    background-color: #0056b3;
+}
+
+.auth-card .socialaccount_provider {
+    list-style: none;
+    padding: 0;
+}
+
+.auth-card a {
+    color: var(--brand-color);
+    text-decoration: none;
+}
+.auth-card a:hover {
+    text-decoration: underline;
+}

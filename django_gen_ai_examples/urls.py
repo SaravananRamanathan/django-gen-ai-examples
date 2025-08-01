@@ -26,6 +26,7 @@ api_patterns = [
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("accounts/", include("allauth.urls")),
     path("", RedirectView.as_view(pattern_name="chat_bot:chat_window", permanent=True)),
     path("", include("chat_bot.urls")),
     re_path(r'^api/', include(api_patterns)),
