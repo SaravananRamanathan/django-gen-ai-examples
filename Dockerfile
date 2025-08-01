@@ -27,6 +27,7 @@ RUN pip install "apache-airflow[celery,postgres,redis]==${AIRFLOW_VERSION}" \
     "apache-airflow-providers-postgres==6.2.1" \
     "apache-airflow-providers-redis==4.1.1" \
     "apache-airflow-providers-celery==3.12.1" \
+    "apache-airflow-providers-google==16.1.0" \
     "connexion==3.2.0" \
     "Flask-Session==0.8.0" \
     "Flask-AppBuilder==4.8.0"
