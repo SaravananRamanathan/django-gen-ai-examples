@@ -3,14 +3,14 @@ All tasks related to Google Calendar integration.
 """
 
 import logging
-import time
 from typing import List, Tuple
 
-from allauth.socialaccount.models import SocialApp, SocialToken
+from allauth.socialaccount.models import SocialToken
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+
+from chat_bot.const import GoogleOAuth2
 
 logger = logging.getLogger(__name__)
 
@@ -60,21 +60,17 @@ def get_upcoming_events(email: str) -> list[dict]:
         email,
     )
 
-    social_token = SocialToken.objects.get(account__user=user, account__provider="google")
-    # TODO: move to const.
-    app = SocialApp.objects.get(provider="google")
-    client_id = app.client_id
-    client_secret = app.secret
+    try:
+        social_token = SocialToken.objects.get(account__user=user, account__provider="google")
+    except SocialToken.DoesNotExist:
+        logger.error("No Google social token found for user %s.", user)
+        return []
 
-    credentials = Credentials(
-        token=social_token.token,
-        refresh_token=social_token.token_secret,  # allauth stored refresh_token.
-        token_uri="https://oauth2.googleapis.com/token",
-        client_id=client_id,
-        client_secret=client_secret,
-        scopes=["https://www.googleapis.com/auth/calendar.readonly"],
+    service = build(
+        "calendar",
+        "v3",
+        credentials=GoogleOAuth2.get_credentials(token=social_token.token, refresh_token=social_token.token_secret),
     )
-    service = build("calendar", "v3", credentials=credentials)
     now = timezone.now().isoformat()
 
     events_result = (

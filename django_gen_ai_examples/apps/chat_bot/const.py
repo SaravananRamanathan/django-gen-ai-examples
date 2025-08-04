@@ -4,6 +4,8 @@ All Constants for the Chat Bot application.
 
 import os
 
+from google.oauth2.credentials import Credentials
+
 
 class SidebarMenuChoices:
     """
@@ -121,3 +123,57 @@ class GeminiAPIConstants:
             return str(os.environ[cls.GEMINI_API_KEY])
         except KeyError as e:
             raise EnvironmentError(f"Environment variable `{cls.GEMINI_API_KEY}` not set.") from e
+
+
+class GoogleOAuth2:
+    """
+    Constants for Google OAuth integration.
+    """
+
+    GOOGLE_OAUTH_CLIENT_ID = "GOOGLE_OAUTH_CLIENT_ID"
+    GOOGLE_OAUTH_CLIENT_SECRET = "GOOGLE_OAUTH_CLIENT_SECRET"
+    token_uri = "https://oauth2.googleapis.com/token"
+    scopes = ["https://www.googleapis.com/auth/calendar.readonly"]
+
+    @classmethod
+    def get_client_id(cls) -> str:
+        """
+        Retrieve the Google OAuth client ID from ENV.
+        NOTE: client ID is also saved to allauth-SocialApp model via django admin.
+        """
+        try:
+            return str(os.environ[cls.GOOGLE_OAUTH_CLIENT_ID])
+        except KeyError as e:
+            raise EnvironmentError(f"Environment variable `{cls.GOOGLE_OAUTH_CLIENT_ID}` not set.") from e
+
+    @classmethod
+    def get_client_secret(cls) -> str:
+        """
+        Retrieve the Google OAuth client secret from ENV.
+        NOTE: client secret is also saved to allauth-SocialApp model via django admin.
+        """
+        try:
+            return str(os.environ[cls.GOOGLE_OAUTH_CLIENT_SECRET])
+        except KeyError as e:
+            raise EnvironmentError(f"Environment variable `{cls.GOOGLE_OAUTH_CLIENT_SECRET}` not set.") from e
+
+    @classmethod
+    def get_credentials(cls, token: str, refresh_token: str) -> "Credentials":
+        """
+        Create and return Google OAuth credentials.
+
+        Args:
+            token: Access token.
+            refresh_token: Refresh token.
+
+        Returns:
+            Credentials object for Google API access.
+        """
+        return Credentials(
+            token=token,
+            refresh_token=refresh_token,
+            token_uri=cls.token_uri,
+            client_id=cls.get_client_id(),
+            client_secret=cls.get_client_secret(),
+            scopes=cls.scopes,
+        )
