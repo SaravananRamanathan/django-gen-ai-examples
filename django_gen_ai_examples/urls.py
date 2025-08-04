@@ -21,7 +21,7 @@ from django.urls import include, path, re_path
 from django.views.generic.base import RedirectView
 
 api_patterns = [
-    path(r'chat_bot/', include('chat_bot.api.urls', namespace='chatbot-api')),
+    path(r"chat_bot/", include("chat_bot.api.urls", namespace="chatbot-api")),
 ]
 
 urlpatterns = [
@@ -29,6 +29,6 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("", RedirectView.as_view(pattern_name="chat_bot:chat_window", permanent=True)),
     path("", include("chat_bot.urls")),
-    re_path(r'^api/', include(api_patterns)),
+    re_path(r"^api/", include(api_patterns)),
     path("tinymce/", include("tinymce.urls")),
 ] + debug_toolbar_urls()

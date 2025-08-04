@@ -60,30 +60,30 @@ def get_upcoming_events(email: str) -> list[dict]:
         email,
     )
 
-    social_token = SocialToken.objects.get(account__user=user, account__provider='google')
+    social_token = SocialToken.objects.get(account__user=user, account__provider="google")
     # TODO: move to const.
-    app = SocialApp.objects.get(provider='google')
+    app = SocialApp.objects.get(provider="google")
     client_id = app.client_id
     client_secret = app.secret
 
     credentials = Credentials(
         token=social_token.token,
         refresh_token=social_token.token_secret,  # allauth stored refresh_token.
-        token_uri='https://oauth2.googleapis.com/token',
+        token_uri="https://oauth2.googleapis.com/token",
         client_id=client_id,
         client_secret=client_secret,
-        scopes=['https://www.googleapis.com/auth/calendar.readonly'],
+        scopes=["https://www.googleapis.com/auth/calendar.readonly"],
     )
-    service = build('calendar', 'v3', credentials=credentials)
+    service = build("calendar", "v3", credentials=credentials)
     now = timezone.now().isoformat()
 
     events_result = (
         service.events()
-        .list(calendarId='primary', timeMin=now, maxResults=100, singleEvents=True, orderBy='startTime')
+        .list(calendarId="primary", timeMin=now, maxResults=100, singleEvents=True, orderBy="startTime")
         .execute()
     )
 
-    event_items = events_result.get('items', [])
+    event_items = events_result.get("items", [])
 
     if not event_items:
         logger.warning("No upcoming events found for %s.", email)
@@ -92,6 +92,6 @@ def get_upcoming_events(email: str) -> list[dict]:
     # NOTE: logging to test for now.
     for event_item in event_items:
         logger.info("Event: %s", event_item)
-        logger.info("Event summary: %s", event_item.get('summary', 'No summary'))
+        logger.info("Event summary: %s", event_item.get("summary", "No summary"))
 
     return event_items

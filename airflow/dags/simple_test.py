@@ -17,44 +17,44 @@ def task_test_airflow_dag():
 
 
 default_args = {
-    'owner': 'django-gen-ai-examples',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 1, 1),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(seconds=30),
+    "owner": "django-gen-ai-examples",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 1, 1),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 1,
+    "retry_delay": timedelta(seconds=30),
 }
 
 dag = DAG(
-    'simple_test',
+    "simple_test",
     default_args=default_args,
-    description='Simple test DAG with basic commands',
+    description="Simple test DAG with basic commands",
     schedule=None,
     catchup=False,
-    tags=['test', 'simple'],
+    tags=["test", "simple"],
 )
 
 echo_task = BashOperator(
-    task_id='echo_hello',
+    task_id="echo_hello",
     bash_command='echo "Hello, test successful!"',
     dag=dag,
 )
 
 date_task = BashOperator(
-    task_id='print_date',
-    bash_command='date',
+    task_id="print_date",
+    bash_command="date",
     dag=dag,
 )
 
 ls_task = BashOperator(
-    task_id='list_directory',
-    bash_command='ls -la /code',
+    task_id="list_directory",
+    bash_command="ls -la /code",
     dag=dag,
 )
 
 t_task_test_airflow_dag = PythonOperator(
-    task_id='test_airflow_dag',
+    task_id="test_airflow_dag",
     python_callable=task_test_airflow_dag,
     dag=dag,
     retries=2,
