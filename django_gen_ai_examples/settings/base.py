@@ -263,6 +263,19 @@ TINYMCE_DEFAULT_CONFIG = {
 # TODO: move to const later. TEMP.
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
+# Detect if running in Airflow
+def is_running_in_airflow():
+    airflow_indicators = [
+        'AIRFLOW_CTX_DAG_ID',
+        'AIRFLOW_CTX_TASK_ID', 
+        'AIRFLOW__CORE__DAGS_FOLDER',
+        'AIRFLOW_HOME'
+    ]
+    return any(os.getenv(indicator) for indicator in airflow_indicators)
+
+# dynamically choose formatter based on django/airflow context
+LOGGING_FORMATTER = 'airflow' if is_running_in_airflow() else 'standard'
+
 #  _                       _
 # | |                     (_)
 # | |     ___   __ _  __ _ _ _ __   __ _
@@ -287,6 +300,9 @@ LOGGING = {
         'standard': {
             'format': '%(asctime)s [%(levelname)s] %(name)s line %(lineno)d: %(message)s',
         },
+        'airflow': {
+            'format': '%(name)s line %(lineno)d: %(message)s',
+        },
     },
     'filters': {
         'require_debug_false': {
@@ -301,7 +317,7 @@ LOGGING = {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'stream': sys.stdout,
-            'formatter': 'standard',
+            'formatter': LOGGING_FORMATTER,
         },
     },
     'loggers': {

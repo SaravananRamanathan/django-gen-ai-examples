@@ -44,3 +44,7 @@ flake8==7.3.0
 # NOTE: Airflow itself will be installed in the Dockerfile.
 redis==6.2.0
 celery==5.5.3
+
+# Google API Client (for Calendar integration)
+# google-api-python-client==2.177.0 # already part of apache-airflow-providers-google [Installed in Dockerfile]
+google-api-python-client-stubs==1.30.0 # used for type hints.
