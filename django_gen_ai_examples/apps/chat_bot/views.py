@@ -21,7 +21,7 @@ class ChatWindowView(TemplateView):
         """
         user = self.request.user
 
-        if user.is_authenticated and SocialAccount.objects.filter(user=user, provider='google').exists():
+        if user.is_authenticated and SocialAccount.objects.filter(user=user, provider="google").exists():
             return [self.template_name]
         else:
             return ["chat_bot/onboarding.html"]
@@ -31,6 +31,6 @@ class ChatWindowView(TemplateView):
 
         context = super().get_context_data(**kwargs)
         if self.request.user.is_authenticated:
-            context['sidebar_menu_choices'] = get_sidebar_menu_choices()
+            context["sidebar_menu_choices"] = get_sidebar_menu_choices()
 
         return context

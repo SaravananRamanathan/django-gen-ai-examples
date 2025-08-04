@@ -80,7 +80,7 @@ def gemini_completion_request(
 
     if prompt_file_path:
         # TODO: Need to figure out how to handel dynamic variables in prompt files.
-        with open(prompt_file_path, 'r', encoding='utf-8') as file:
+        with open(prompt_file_path, "r", encoding="utf-8") as file:
             messages = [{"role": "user", "content": file.read()}]
     else:
         messages = [{"role": "user", "content": prompt}]

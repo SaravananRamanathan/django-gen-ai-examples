@@ -176,16 +176,16 @@ class LCConversationAPIView(PromptBasedAPIView):
             return Response({"error": "Missing message"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Load conversation history from the session (or start a new one)
-        raw_history = request.session.get('conversation_history', [])
+        raw_history = request.session.get("conversation_history", [])
 
         # Find old Conversations, save them as LangChain message objects
         # NOTE: These are later on passed to the Agent, thats how it gets the hisotric context
         messages = []
         for msg in raw_history:
-            if msg.get('type') == 'human':
-                messages.append(HumanMessage(content=msg.get('content')))
-            elif msg.get('type') == 'ai':
-                messages.append(AIMessage(content=msg.get('content')))
+            if msg.get("type") == "human":
+                messages.append(HumanMessage(content=msg.get("content")))
+            elif msg.get("type") == "ai":
+                messages.append(AIMessage(content=msg.get("content")))
 
         session_memory = ChatMessageHistory(messages=messages)
 
@@ -200,8 +200,8 @@ class LCConversationAPIView(PromptBasedAPIView):
         updated_raw_history = []
         chat_memory: "BaseChatMessageHistory" = engine.memory.chat_memory
         for msg in chat_memory.messages:
-            updated_raw_history.append({'type': msg.type, 'content': msg.content})
-        request.session['conversation_history'] = updated_raw_history
+            updated_raw_history.append({"type": msg.type, "content": msg.content})
+        request.session["conversation_history"] = updated_raw_history
 
         # TODO handel errors.
 
