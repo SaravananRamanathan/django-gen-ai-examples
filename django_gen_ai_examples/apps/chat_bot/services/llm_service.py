@@ -125,23 +125,28 @@ class GoogleLLMService:
         logger.warning("using prompt = %s", prompt)
 
         try:
-            response = self.client.models.generate_content(
+            # NOTE: using streaming for Proof Of Concept:
+            logger.warning("Starting LLM streaming as a Proof Of Concept.")
+            response_stream = self.client.models.generate_content_stream(
                 model=self.model_name,
                 # NOTE: for some reason it does not work if i pass the prompt directly.
                 contents=[{"role": "user", "parts": [{"text": prompt}]}],
             )
 
-            # Handle the response properly based on the new API
-            if hasattr(response, "candidates") and response.candidates:
-                content = response.candidates[0].content
-                if content and hasattr(content, "parts") and content.parts:
-                    text = content.parts[0].text
-                    return text.strip() if text else "No response generated"
-            elif hasattr(response, "text") and response.text:
-                return response.text.strip()
+            response = ""
+            chunk_count = 0
+            for chunk in response_stream:
+                if chunk.text:
+                    chunk_count += 1
+                    chunk_text = chunk.text
+                    response += chunk_text
 
-            logger.warning("Unexpected response format from Google Generative AI")
-            return "I found relevant calendar events but couldn't generate a response. Please try again."
+                    # NOTE: just for Proof of Concept, remove in production if doing it in background.
+                    chunk_preview = chunk_text[:80] + "..." if len(chunk_text) > 80 else chunk_text
+                    logger.info(f"Chunk {chunk_count}: {chunk_preview}")
+
+            logger.info(f"Streaming complete! Received {chunk_count} chunks, total length: {len(response)} characters")
+            return response.strip() if response else "No response generated"
 
         except Exception as e:
             logger.error(f"Error generating LLM response: {e}")
