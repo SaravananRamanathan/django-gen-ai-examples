@@ -272,9 +272,10 @@ def is_running_in_airflow():
         'AIRFLOW_HOME'
     ]
     return any(os.getenv(indicator) for indicator in airflow_indicators)
-
+_is_running_in_airflow = is_running_in_airflow()
 # dynamically choose formatter based on django/airflow context
-LOGGING_FORMATTER = 'airflow' if is_running_in_airflow() else 'standard'
+LOGGING_FORMATTER = 'airflow' if _is_running_in_airflow else 'standard'
+ACTIVE_HANDLER = 'airflow' if _is_running_in_airflow else 'console'
 
 #  _                       _
 # | |                     (_)
@@ -319,12 +320,31 @@ LOGGING = {
             'stream': sys.stdout,
             'formatter': LOGGING_FORMATTER,
         },
+        'airflow': {
+            'level': 'DEBUG',
+            'class': 'logging.NullHandler',
+        },
     },
     'loggers': {
-        '': {
-            'handlers': ['console'],
+        # '': {
+        #     'handlers': ['console'],
+        #     'level': 'DEBUG',
+        #     'propagate': True
+        # },
+        'django_gen_ai_examples': {
+            'handlers': [ACTIVE_HANDLER],
             'level': 'DEBUG',
-            'propagate': True
+            'propagate': True,
+        },
+        'chat_bot': {
+            'handlers': [ACTIVE_HANDLER],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
         },
     },
 }
@@ -347,11 +367,12 @@ LOGOUT_REDIRECT_URL = "/"
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
-        # Readonly perm to user's calendar:
+        # Readonly perm to user's calendar and drive:
         'SCOPE': [
             'profile',
             'email',
             'https://www.googleapis.com/auth/calendar.readonly',
+            'https://www.googleapis.com/auth/drive.readonly',  # For attachment access
         ],
         # get Google for a Refresh Token
         # Airflow need access the data offline later.
@@ -363,6 +384,9 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 SOCIALACCOUNT_STORE_TOKENS = True
+
+# Google API Configuration
+GOOGLE_GENERATIVE_AI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # dev domain whitelist:
 CSRF_TRUSTED_ORIGINS = ["https://corgi-obliging-goshawk.ngrok-free.app",]

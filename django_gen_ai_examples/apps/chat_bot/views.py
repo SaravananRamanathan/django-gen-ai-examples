@@ -2,10 +2,14 @@
 Chat Bot Views
 """
 
+import logging
+
 from allauth.socialaccount.models import SocialAccount
 from django.views.generic import TemplateView
 
 from .utils import get_sidebar_menu_choices
+
+logger = logging.getLogger(__name__)
 
 
 class ChatWindowView(TemplateView):
@@ -21,9 +25,19 @@ class ChatWindowView(TemplateView):
         """
         user = self.request.user
 
-        if user.is_authenticated and SocialAccount.objects.filter(user=user, provider="google").exists():
+        if user.is_authenticated and SocialAccount.objects.filter(user__pk=user.pk, provider="google").exists():
+            logger.debug(
+                "User %s [ID: %s] is authenticated and has a Linked Google account.",
+                user,
+                user.pk,
+            )
             return [self.template_name]
         else:
+            logger.debug(
+                "User %s [ID: %s] is not authenticated or doesn't have a Linked Google account. Redirecting to onboarding.",
+                user,
+                user.pk,
+            )
             return ["chat_bot/onboarding.html"]
 
     def get_context_data(self, **kwargs):

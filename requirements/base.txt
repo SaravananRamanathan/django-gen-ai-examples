@@ -48,3 +48,8 @@ celery==5.5.3
 # Google API Client (for Calendar integration)
 # google-api-python-client==2.177.0 # already part of apache-airflow-providers-google [Installed in Dockerfile]
 google-api-python-client-stubs==1.30.0 # used for type hints.
+
+# Document processing for attachments
+PyPDF2==3.0.1
+python-docx==1.2.0
+docx2txt==0.9  # TODO: I am not sure if this is used. will check later, i got soo side tracked.
