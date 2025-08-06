@@ -133,7 +133,10 @@ class GoogleOAuth2:
     GOOGLE_OAUTH_CLIENT_ID = "GOOGLE_OAUTH_CLIENT_ID"
     GOOGLE_OAUTH_CLIENT_SECRET = "GOOGLE_OAUTH_CLIENT_SECRET"
     token_uri = "https://oauth2.googleapis.com/token"
-    scopes = ["https://www.googleapis.com/auth/calendar.readonly"]
+    scopes = [
+        "https://www.googleapis.com/auth/calendar.readonly",
+        "https://www.googleapis.com/auth/drive.readonly",
+    ]
 
     @classmethod
     def get_client_id(cls) -> str:

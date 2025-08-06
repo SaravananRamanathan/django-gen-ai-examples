@@ -15,6 +15,7 @@ x-airflow-base: &airflow-base
     - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://postgres:postgres@db:5432/airflow
     - AIRFLOW__CORE__FERNET_KEY=d6s_hR8mFOG_9mV-wXYhOr-FLOy6Wx1uVJKu5hP_wCU=
     - AIRFLOW__CORE__EXECUTION_API_SERVER_URL=http://airflow-api-server:8080/execution/
+    - AIRFLOW__LOGGING__LOGGING_LEVEL=WARNING
   volumes:
     - .:/code
     - base-data:/data
@@ -135,6 +136,7 @@ services:
       - AIRFLOW__CORE__FERNET_KEY=d6s_hR8mFOG_9mV-wXYhOr-FLOy6Wx1uVJKu5hP_wCU=
       - AIRFLOW__CORE__EXECUTION_API_SERVER_URL=http://airflow-api-server:8080/execution/
       - AIRFLOW__CELERY__WORKER_CONCURRENCY=2
+      - AIRFLOW__LOGGING__LOGGING_LEVEL=DEBUG
     depends_on:
       airflow-api-server: { condition: service_healthy }
 
