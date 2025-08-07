@@ -28,7 +28,7 @@ class CalendarRAGService:
     """
 
     def __init__(self):
-        self.default_similarity_threshold = 0.5
+        self.default_similarity_threshold = 0.35
         self.max_results = 50
 
     def query_calendar_events(
@@ -39,9 +39,11 @@ class CalendarRAGService:
         date_range_days: Optional[int] = 90,
         similarity_threshold: Optional[float] = None,
         max_results: Optional[int] = None,
+        time_focus: Optional[str] = None,
+        entities: Optional[List[str]] = None,
     ) -> Tuple[List[CalendarEvent], List[float], Optional[CalendarRAGQuery]]:
         """
-        Query calendar events using vector similarity search.
+        Query calendar events using vector similarity search with enhanced filtering.
 
         Args:
             user_email: Email of the user
@@ -50,6 +52,8 @@ class CalendarRAGService:
             date_range_days: Limit search to events within N days (None for all events)
             similarity_threshold: Minimum similarity score (0-1)
             max_results: Maximum number of results to return
+            time_focus: Temporal focus - "past", "present", "future", or "all"
+            entities: List of important keywords/entities to boost in search # TODO: Implement importance weighting
 
         Returns:
             Tuple of (events, similarity_scores, rag_query_record)
@@ -94,10 +98,29 @@ class CalendarRAGService:
             .prefetch_related("attachments")
         )
 
+        # Apply temporal focus filter -- narrowing down queryset.
+        now = timezone.now()
+        if time_focus == "past":
+            queryset = queryset.filter(end_datetime__lt=now)
+        elif time_focus == "present":
+            # Events happening today
+            today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            today_end = today_start + timedelta(days=1)
+            queryset = queryset.filter(start_datetime__lt=today_end, end_datetime__gt=today_start)
+        elif time_focus == "future":
+            queryset = queryset.filter(start_datetime__gt=now)
+        # "all" or None - no additional filtering
+
         # Apply date range filter
         if date_range_days:
-            cutoff_date = timezone.now() - timedelta(days=date_range_days)
-            queryset = queryset.filter(start_datetime__gte=cutoff_date)
+            if time_focus == "future":
+                # For future events, look ahead
+                cutoff_date = now + timedelta(days=date_range_days)
+                queryset = queryset.filter(start_datetime__lte=cutoff_date)
+            else:
+                # For past/all events, look back
+                cutoff_date = now - timedelta(days=date_range_days)
+                queryset = queryset.filter(start_datetime__gte=cutoff_date)
 
         # Perform vector similarity search
         events_with_scores = (
@@ -118,7 +141,7 @@ class CalendarRAGService:
         # If including attachments, also search attachment content
         if include_attachments:
             attachment_events, attachment_scores = self._search_attachments(
-                user, query_embedding, similarity_threshold, max_results, date_range_days
+                user, query_embedding, similarity_threshold, max_results, date_range_days, time_focus
             )
 
             # Merge and deduplicate results
@@ -142,6 +165,7 @@ class CalendarRAGService:
         similarity_threshold: float,
         max_results: int,
         date_range_days: Optional[int],
+        time_focus: Optional[str] = None,
     ) -> Tuple[List[CalendarEvent], List[float]]:
         """Search calendar event attachments for relevant content."""
 
@@ -150,10 +174,30 @@ class CalendarRAGService:
             event__user=user, content_embedding__isnull=False, processing_status="completed"
         ).select_related("event__user")
 
+        # Apply temporal focus filter -- narrowing down queryset.
+        now = timezone.now()
+        if time_focus == "past":
+            attachment_queryset = attachment_queryset.filter(event__end_datetime__lt=now)
+        elif time_focus == "present":
+            # Events happening today
+            today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            today_end = today_start + timedelta(days=1)
+            attachment_queryset = attachment_queryset.filter(
+                event__start_datetime__lt=today_end, event__end_datetime__gt=today_start
+            )
+        elif time_focus == "future":
+            attachment_queryset = attachment_queryset.filter(event__start_datetime__gt=now)
+
         # Apply date range filter
         if date_range_days:
-            cutoff_date = timezone.now() - timedelta(days=date_range_days)
-            attachment_queryset = attachment_queryset.filter(event__start_datetime__gte=cutoff_date)
+            if time_focus == "future":
+                # For future events, look ahead
+                cutoff_date = now + timedelta(days=date_range_days)
+                attachment_queryset = attachment_queryset.filter(event__start_datetime__lte=cutoff_date)
+            else:
+                # For past/all events, look back
+                cutoff_date = now - timedelta(days=date_range_days)
+                attachment_queryset = attachment_queryset.filter(event__start_datetime__gte=cutoff_date)
 
         # Perform vector similarity search on attachments
         attachments_with_scores = (
