@@ -121,7 +121,7 @@ def task_test_user_calendar_summary(**airflow_context):
 
     # Test the summary method
     summary = calendar_rag_service.get_user_calendar_summary(
-        user_email=params["user_email"], days_ahead=params.get("summary_days_ahead", 7)
+        user_email=params["user_email"], days_ahead=params.get("summary_days_ahead", 0)
     )
 
     logger.info("=== USER CALENDAR SUMMARY ===")
@@ -188,9 +188,9 @@ with DAG(
             ),
             "summary_days_ahead": Param(
                 type="integer",
-                minimum=1,
+                minimum=0,
                 maximum=30,
-                default=7,
+                default=0,
                 description="Days ahead for calendar summary",
             ),
         }
