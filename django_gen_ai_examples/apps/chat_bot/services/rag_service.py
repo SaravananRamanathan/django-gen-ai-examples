@@ -28,8 +28,8 @@ class CalendarRAGService:
     """
 
     def __init__(self):
-        self.default_similarity_threshold = 0.35
-        self.max_results = 10
+        self.default_similarity_threshold = 0.5
+        self.max_results = 50
 
     def query_calendar_events(
         self,
@@ -259,9 +259,12 @@ class CalendarRAGService:
         start_date = timezone.now()
         end_date = start_date + timedelta(days=days_ahead)
 
-        events = CalendarEvent.objects.filter(
-            user=user, start_datetime__gte=start_date, start_datetime__lte=end_date
-        ).order_by("start_datetime")
+        if days_ahead == 0:
+            q_filter = Q(user=user, start_datetime__date=start_date.date())
+        else:
+            q_filter = Q(user=user, start_datetime__gte=start_date, start_datetime__lte=end_date)
+
+        events = CalendarEvent.objects.filter(q_filter).order_by("start_datetime")
 
         summary: Dict[str, Any] = {
             "user_email": user_email,
