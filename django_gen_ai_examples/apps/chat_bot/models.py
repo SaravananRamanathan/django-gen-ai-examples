@@ -194,6 +194,10 @@ class CalendarEvent(models.Model):
         self.combined_text = self.generate_combined_text()
         self.content_embedding = google_embedding_service.generate_embedding(self.combined_text)
 
+    def get_admin_url(self):
+        """Get local admin URL for this calendar event."""
+        return f"http://localhost:8220/admin/chat_bot/calendarevent/{self.id}/change/"
+
 
 class CalendarEventAttachment(models.Model):
     """

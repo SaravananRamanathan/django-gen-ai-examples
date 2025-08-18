@@ -42,23 +42,49 @@ def perform_llm_rag_query(**airflow_context):
     params = airflow_context["params"]
     logger.info("Performing LLM+RAG query with params: %s", params)
 
-    result = google_llm_service.generate_calendar_response(
+    # Collect streaming response
+    full_response = ""
+    events_found = 0
+    model_used = ""
+    response_time_ms = 0
+    events = []
+    similarity_scores = []
+    chunk_count = 0
+
+    for event_type, data in google_llm_service.generate_calendar_response(
         user_email=params["user_email"],
         query=params["query"],
         include_attachments=params["include_attachments"],
         date_range_days=params["date_range_limit"],
-    )
-    logger.info("result = %s", result)
-    logger.info("Response: %s", result["response"])
+    ):
+        if event_type == "status":
+            logger.info("Status: %s", data.get("message", ""))
 
-    logger.info("Total Events Found: %d", result["events_found"])
-    logger.info("Model Used: %s", result["model_used"])
-    logger.info("Response Time: %d ms", result["response_time_ms"])
+        elif event_type == "chunk":
+            chunk_text = data.get("text", "")
+            full_response += chunk_text
+            chunk_count += 1
+            logger.info("Chunk %d: %s", chunk_count, chunk_text[:100] + "..." if len(chunk_text) > 100 else chunk_text)
+
+        elif event_type == "complete":
+            events_found = data.get("events_found", 0)
+            model_used = data.get("model_used", "")
+            response_time_ms = data.get("response_time_ms", 0)
+            events = data.get("events", [])
+            similarity_scores = data.get("similarity_scores", [])
+            full_response = data.get("response", full_response)  # Use complete response if available
+            break
+
+    logger.info("Final Response: %s", full_response)
+    logger.info("Total Events Found: %d", events_found)
+    logger.info("Model Used: %s", model_used)
+    logger.info("Response Time: %d ms", response_time_ms)
+    logger.info("Total Chunks Received: %d", chunk_count)
 
     # Show found events:
-    if result.get("events"):
+    if events:
         logger.info("Retrieved Events:")
-        for i, (event, score) in enumerate(zip(result["events"], result["similarity_scores"]), 1):
+        for i, (event, score) in enumerate(zip(events, similarity_scores), 1):
             logger.info(
                 f"{i}. {event.summary} "
                 f"({event.start_datetime.strftime('%Y-%m-%d %H:%M')}) "
