@@ -270,6 +270,14 @@ class CalendarRAGService:
             if event.location:
                 event_text.append(f"Location: {event.location}")
 
+            if event.meeting_url:
+                event_text.append(f"Meeting URL: {event.meeting_url}")
+
+            if event.google_event_id:
+                event_text.append(f"Google Event ID: {event.google_event_id}")
+
+            event_text.append(f"Django Admin page: {event.get_admin_url()}")
+
             if event.attendees:
                 attendee_emails = [att.get("email", "") for att in event.attendees if att.get("email")]
                 if attendee_emails:

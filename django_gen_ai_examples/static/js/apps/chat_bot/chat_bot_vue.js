@@ -98,6 +98,19 @@ const app = createApp({
       newMessage.value = "";
       await scrollToBottom();
 
+      // Check if this is a streaming endpoint (Calendar LLM+RAG)
+      const isStreamingEndpoint = currentModel.value.apiUrl && currentModel.value.apiUrl.includes('calendar/llm-rag');
+
+      console.log("current config:", currentConfigValues.value);
+
+      if (isStreamingEndpoint && currentConfigValues.value['streaming'] === 'true') {
+        await handleStreamingResponse(userInput);
+      } else {
+        await handleRegularResponse(userInput);
+      }
+    };
+
+    const handleRegularResponse = async (userInput) => {
       try {
         const response = await fetch(currentModel.value.apiUrl, {
           method: "POST",
@@ -107,8 +120,20 @@ const app = createApp({
           },
           body: JSON.stringify({ message: userInput, ...currentConfigValues.value }),
         });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
         const data = await response.json();
+        
+        if (!response.ok) {
+          // Handle error responses with custom messages from Django views
+          const errorMessage = data.message || data.error || data.detail || `Server error: ${response.status}`;
+          console.error("API Error:", errorMessage, data);
+          messages.value.push({
+            sender: "bot",
+            text: `❌ ${errorMessage}`,
+          });
+          return;
+        }
+        
         if (data.message) {
           const sanitizedHtml = DOMPurify.sanitize(data.message);
           messages.value.push({ sender: "bot", text: sanitizedHtml });
@@ -117,11 +142,108 @@ const app = createApp({
         }
       } catch (error) {
         console.error("Fetch Error:", error);
+        // Check if error is due to network issues or JSON parsing
+        const errorText = error.message.includes('JSON') 
+          ? "Server returned an invalid response."
+          : "Sorry, I couldn't connect to the server.";
         messages.value.push({
           sender: "bot",
-          text: "Sorry, I couldn't connect to the server.",
+          text: `❌ ${errorText}`,
         });
       }
+      await scrollToBottom();
+    };
+
+    const handleStreamingResponse = async (userInput) => {
+      // Add a placeholder message for streaming response
+      const botMessageIndex = messages.value.length;
+      messages.value.push({ sender: "bot", text: "🔍 Searching your calendar...", streaming: true });
+      await scrollToBottom();
+
+      try {
+        const requestBody = { 
+          message: userInput, 
+          streaming: "true",
+          ...currentConfigValues.value 
+        };
+
+        const response = await fetch(currentModel.value.apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          // Try to get error message from response body
+          let errorMessage = `Server error: ${response.status}`;
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorData.error || errorData.detail || errorMessage;
+          } catch (e) {
+            // If JSON parsing fails, use the default error message
+            console.warn("Could not parse error response as JSON");
+          }
+          throw new Error(errorMessage);
+        }
+
+        // Handle SSE
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let accumulatedText = "";
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop(); // Keep incomplete line in buffer
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                
+                if (data.type === 'status') {
+                  // Update status message
+                  messages.value[botMessageIndex].text = `🔍 ${data.message}`;
+                } else if (data.type === 'chunk') {
+                  // Append chunk to accumulated text
+                  accumulatedText += data.text;
+                  const sanitizedHtml = DOMPurify.sanitize(accumulatedText);
+                  messages.value[botMessageIndex].text = sanitizedHtml;
+                } else if (data.type === 'complete') {
+                  // Final response with metadata
+                  const sanitizedHtml = DOMPurify.sanitize(data.full_response || accumulatedText);
+                  messages.value[botMessageIndex].text = sanitizedHtml;
+                  messages.value[botMessageIndex].streaming = false;
+                  console.log('Streaming complete:', data);
+                } else if (data.type === 'error') {
+                  messages.value[botMessageIndex].text = `❌ Error: ${data.message}`;
+                  messages.value[botMessageIndex].streaming = false;
+                } else if (data.type === 'done') {
+                  messages.value[botMessageIndex].streaming = false;
+                  break;
+                }
+                
+                await scrollToBottom();
+              } catch (e) {
+                console.error('Error parsing SSE data:', e, line);
+              }
+            }
+          }
+        }
+
+      } catch (error) {
+        console.error("Streaming Error:", error);
+        messages.value[botMessageIndex].text = "Sorry, I couldn't connect to the server.";
+        messages.value[botMessageIndex].streaming = false;
+      }
+      
       await scrollToBottom();
     };
 

@@ -16,4 +16,6 @@ urlpatterns = [
     path("lc/conversation/", views.LCConversationAPIView.as_view(), name="lc_conversation"),
     path("lc/youtube_transcript/", views.LCYouTubeTranscriptAPIView.as_view(), name="lc_youtube_transcript"),
     path("dictionary/search/", views.DictionarySearchAPIView.as_view(), name="dictionary_search"),
+    path("calendar/rag/", views.CalendarRAGAPIView.as_view(), name="calendar_rag"),
+    path("calendar/llm-rag/", views.CalendarLLMRAGAPIView.as_view(), name="calendar_llm_rag"),
 ]

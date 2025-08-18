@@ -4,6 +4,7 @@ chat bot app api views
 
 from typing import TYPE_CHECKING, Dict, Optional
 
+from django.http import StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.template import Context, Template
 from django.utils.html import strip_tags
@@ -23,6 +24,7 @@ from rest_framework.views import APIView
 
 from chat_bot.const import GeminiAPIConstants
 from chat_bot.models import DictionaryWord, PromptTemplate
+from chat_bot.services.llm_service import google_llm_service
 from chat_bot.utils import (
     LCConversationalAgent,
     gemini_completion_request,
@@ -254,3 +256,213 @@ class DictionarySearchAPIView(ListAPIView):
     queryset = DictionaryWord.objects.all().prefetch_related("meanings")
     # search_fields = ["^term"] # Not feasible for semantic search.
     filterset_class = DictionaryWordFilter
+
+
+class CalendarRAGAPIView(PromptBasedAPIView):
+    """
+    Calendar RAG API view for querying calendar events using vector similarity.
+    """
+
+    prompt_lookup_key = "calendar-rag-prompt"
+
+    def post(self, request, *_, **__):
+        """Handle calendar RAG requests."""
+        user_message = request.data.get("message")
+        if not user_message:
+            return self.standard_response(message_str="Message is required", status_code=status.HTTP_400_BAD_REQUEST)
+
+        # Extract configuration options
+        include_attachments = request.data.get("include_attachments", "true") == "true"
+        date_range_days = int(request.data.get("date_range_days", 90))
+        time_focus = request.data.get("time_focus", "all")
+
+        try:
+            # Use the existing RAG service
+            from chat_bot.services.rag_service import calendar_rag_service
+
+            # Get user email from the authenticated user
+            user_email = request.user.email
+            if not user_email:
+                return self.standard_response(
+                    message_str="User email not found", status_code=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Query calendar events using RAG
+            events, scores, rag_query = calendar_rag_service.query_calendar_events(
+                user_email=user_email,
+                query_text=user_message,
+                include_attachments=include_attachments,
+                date_range_days=date_range_days,
+                time_focus=time_focus,
+            )
+
+            if not events:
+                return self.standard_response(message_str="No relevant calendar events found for your query.")
+
+            # Format events as context for display
+            context = calendar_rag_service.get_context_for_llm(events, scores)
+
+            # Return the RAG results directly without LLM processing
+            response_data = {
+                "events_found": len(events),
+                "events_context": context,
+                "similarity_scores": scores,
+                "query_analysis": {
+                    "include_attachments": include_attachments,
+                    "date_range_days": date_range_days,
+                    "time_focus": time_focus,
+                },
+            }
+
+            return self.standard_response(
+                message_str=f"Found {len(events)} relevant calendar events:\n\n{context}",
+                message_data=response_data,
+            )
+
+        except Exception as e:
+            return self.standard_response(
+                message_str=f"Error processing calendar query: {str(e)}",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class CalendarLLMRAGAPIView(PromptBasedAPIView):
+    """
+    Calendar LLM + RAG API view for intelligent calendar insights with streaming support.
+    """
+
+    prompt_lookup_key = "calendar-rag-prompt"
+
+    def post(self, request, *_, **__):
+        """Handle calendar LLM + RAG requests with streaming."""
+        user_message = request.data.get("message")
+        if not user_message:
+            return self.standard_response(message_str="Message is required", status_code=status.HTTP_400_BAD_REQUEST)
+
+        # Get config options
+        use_streaming = request.data.get("streaming", "true") == "true"
+        include_attachments = request.data.get("include_attachments", "true") == "true"
+        date_range_days = int(request.data.get("date_range_days", 90))
+        analysis_type = request.data.get("analysis_type", "general")
+
+        try:
+            # Get user email from the authenticated user
+            user_email = request.user.email
+            if not user_email:
+                return self.standard_response(
+                    message_str="User email not found", status_code=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Modify the user message based on analysis type
+            if analysis_type == "summary":
+                enhanced_message = f"Provide a comprehensive summary of my calendar: {user_message}"
+            elif analysis_type == "time_management":
+                enhanced_message = f"Analyze my time management and provide insights: {user_message}"
+            elif analysis_type == "meeting_insights":
+                enhanced_message = f"Provide insights about my meetings and collaborations: {user_message}"
+            elif analysis_type == "schedule_optimization":
+                enhanced_message = f"Suggest ways to optimize my schedule: {user_message}"
+            else:
+                enhanced_message = user_message
+
+            if use_streaming:
+                # Return streaming response
+                return self._stream_calendar_response(
+                    user_email=user_email,
+                    query=enhanced_message,
+                    include_attachments=include_attachments,
+                    date_range_days=date_range_days,
+                    analysis_type=analysis_type,
+                )
+            else:
+                # TODO: Implement non-streaming option if needed.
+                return self.standard_response(
+                    message_str=f"Non-streaming version is not implemented.",
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+        except Exception as e:
+            return self.standard_response(
+                message_str=f"Error processing calendar query: {str(e)}",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    def _stream_calendar_response(
+        self, user_email: str, query: str, include_attachments: bool, date_range_days: int, analysis_type: str
+    ):
+        """Stream calendar response using Server-Sent Events."""
+
+        def event_stream():
+            import json
+            import time
+
+            try:
+                # Send initial status
+                yield f"data: {json.dumps({'type': 'status', 'message': 'Analyzing query and searching calendar events...'})}\n\n".encode(
+                    "utf-8"
+                )
+
+                start_time = int(time.time() * 1000)
+
+                # Modify the user message based on analysis type
+                if analysis_type == "summary":
+                    enhanced_query = f"Provide a comprehensive summary of my calendar: {query}"
+                elif analysis_type == "time_management":
+                    enhanced_query = f"Analyze my time management and provide insights: {query}"
+                elif analysis_type == "meeting_insights":
+                    enhanced_query = f"Provide insights about my meetings and collaborations: {query}"
+                elif analysis_type == "schedule_optimization":
+                    enhanced_query = f"Suggest ways to optimize my schedule: {query}"
+                else:
+                    enhanced_query = query
+
+                # Variables to store streaming data
+                streaming_data = {"full_response": "", "chunk_count": 0}
+
+                # Use the streaming calendar response method directly
+                for event_type, data in google_llm_service.generate_calendar_response(
+                    user_email=user_email,
+                    query=enhanced_query,
+                    include_attachments=include_attachments,
+                    date_range_days=date_range_days,
+                ):
+                    if event_type == "status":
+                        # Send status updates
+                        yield f"data: {json.dumps({'type': 'status', 'message': data.get('message', '')})}\n\n".encode(
+                            "utf-8"
+                        )
+
+                    elif event_type == "chunk":
+                        # Send text chunks in real-time
+                        chunk_data = {
+                            "type": "chunk",
+                            "text": data.get("text", ""),
+                            "chunk_id": data.get("chunk_id", 0),
+                        }
+                        yield f"data: {json.dumps(chunk_data)}\n\n".encode("utf-8")
+
+                    elif event_type == "complete":
+                        # Send final completion data
+                        completion_data = {
+                            "type": "complete",
+                            "events_found": data.get("events_found", 0),
+                            "model_used": data.get("model_used"),
+                            "response_time_ms": data.get("response_time_ms"),
+                            "analysis_type": analysis_type,
+                            "chunk_count": data.get("chunk_count", 0),
+                            "full_response": data.get("response", ""),
+                            "query_analysis": data.get("query_analysis", {}),
+                        }
+                        yield f"data: {json.dumps(completion_data)}\n\n".encode("utf-8")
+                        break
+                yield f"data: {json.dumps({'type': 'done'})}\n\n".encode("utf-8")
+
+            except Exception as e:
+                yield f"data: {json.dumps({'type': 'error', 'message': f'Error: {str(e)}'})}\n\n".encode("utf-8")
+                yield f"data: {json.dumps({'type': 'done'})}\n\n".encode("utf-8")
+
+        response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+        response["Cache-Control"] = "no-cache"
+        response["Access-Control-Allow-Origin"] = "*"
+        response["Access-Control-Allow-Headers"] = "Cache-Control"
+        return response

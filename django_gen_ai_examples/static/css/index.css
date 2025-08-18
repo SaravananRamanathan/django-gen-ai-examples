@@ -160,6 +160,30 @@ html, body {
 .message.user { background-color: var(--bubble-user-bg); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
 .message.bot { background-color: var(--bubble-bot-bg); align-self: flex-start; border-bottom-left-radius: 4px; }
 
+/* --- Streaming message indicators --- */
+.message.bot.streaming {
+    position: relative;
+    animation: pulse 1.5s infinite;
+}
+
+.message.bot.streaming::after {
+    content: "●";
+    color: #007bff;
+    animation: blink 1s infinite;
+    margin-left: 5px;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 0; }
+    51%, 100% { opacity: 1; }
+}
+
 /* --- Chat Form and Input --- */
 .chat-form {
     display: flex;

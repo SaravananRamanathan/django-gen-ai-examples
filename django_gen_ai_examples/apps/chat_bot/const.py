@@ -16,6 +16,7 @@ class SidebarMenuChoices:
     COMPLETIONS = "Completions"
     LANG_CHAIN = "LangChain"
     SEMANTIC_SEARCH = "Semantic Search"
+    CALENDAR = "Calendar"
 
     # JSON keys for sidebar menu items (Used by FE-Vue):
     NAME_KEY = "name"
@@ -97,6 +98,105 @@ class SidebarMenuChoices:
                         cls.API_URL_NAME_KEY: "chatbot-api:dictionary_search",
                         cls.PLACEHOLDER: "Search for a word",
                         cls.UI_TYPE: "search-table",
+                    },
+                ],
+            },
+            {
+                cls.NAME_KEY: cls.CALENDAR,
+                cls.IS_EXPANDED_KEY: True,
+                cls.SUB_ITEMS_KEY: [
+                    {
+                        cls.NAME_KEY: "RAG",
+                        cls.API_URL_NAME_KEY: "chatbot-api:calendar_rag",
+                        cls.PLACEHOLDER: "Ask about your calendar events",
+                        cls.CONFIG_OPTIONS: [
+                            {
+                                "key": "include_attachments",
+                                "label": "Include Attachments",
+                                "type": "select",
+                                "defaultValue": "true",
+                                "options": [
+                                    {"value": "true", "text": "Yes"},
+                                    {"value": "false", "text": "No"},
+                                ],
+                            },
+                            {
+                                "key": "date_range_days",
+                                "label": "Date Range (Days)",
+                                "type": "select",
+                                "defaultValue": "90",
+                                "options": [
+                                    {"value": "7", "text": "7 days"},
+                                    {"value": "30", "text": "30 days"},
+                                    {"value": "90", "text": "90 days"},
+                                    {"value": "365", "text": "1 year"},
+                                ],
+                            },
+                            {
+                                "key": "time_focus",
+                                "label": "Time Focus",
+                                "type": "select",
+                                "defaultValue": "all",
+                                "options": [
+                                    {"value": "all", "text": "All Time"},
+                                    {"value": "past", "text": "Past Events"},
+                                    {"value": "present", "text": "Current Events"},
+                                    {"value": "future", "text": "Future Events"},
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        cls.NAME_KEY: "LLM + RAG",
+                        cls.API_URL_NAME_KEY: "chatbot-api:calendar_llm_rag",
+                        cls.PLACEHOLDER: "Get intelligent insights about your calendar",
+                        cls.CONFIG_OPTIONS: [
+                            {
+                                "key": "streaming",
+                                "label": "Streaming",
+                                "type": "select",
+                                "defaultValue": "true",
+                                "options": [
+                                    {"value": "true", "text": "Yes"},
+                                    {"value": "false", "text": "No"},
+                                ],
+                            },
+                            {
+                                "key": "include_attachments",
+                                "label": "Include Attachments",
+                                "type": "select",
+                                "defaultValue": "true",
+                                "options": [
+                                    {"value": "true", "text": "Yes"},
+                                    {"value": "false", "text": "No"},
+                                ],
+                            },
+                            {
+                                "key": "date_range_days",
+                                "label": "Date Range (Days)",
+                                "type": "select",
+                                "defaultValue": "90",
+                                "options": [
+                                    {"value": "7", "text": "7 days"},
+                                    {"value": "30", "text": "30 days"},
+                                    {"value": "90", "text": "90 days"},
+                                    {"value": "365", "text": "1 year"},
+                                ],
+                            },
+                            {
+                                "key": "analysis_type",
+                                "label": "Analysis Type",
+                                "type": "select",
+                                "defaultValue": "general",
+                                "options": [
+                                    {"value": "general", "text": "General Analysis"},
+                                    {"value": "summary", "text": "Summary"},
+                                    {"value": "time_management", "text": "Time Management"},
+                                    {"value": "meeting_insights", "text": "Meeting Insights"},
+                                    {"value": "schedule_optimization", "text": "Schedule Optimization"},
+                                ],
+                            },
+                        ],
                     },
                 ],
             },

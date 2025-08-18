@@ -6,13 +6,12 @@ Usage:
         user_email="user@example.com",
         query="What are my events for today?"
     )
-old method: generate_calendar_response_old. # Deprecated, use new method.
-new method: generate_calendar_response.
 """
 
 import json
 import logging
 import re
+import time
 from typing import Optional
 
 import google.genai as genai
@@ -50,37 +49,47 @@ class GoogleLLMService:
         rag_query_str: Optional[str] = None,
         include_attachments: bool = True,
         date_range_days: Optional[int] = 90,
-    ) -> dict:
+    ):
         """
-        Generate a response to a calendar-related query using RAG with self-querying logic.
+        Generate a streaming response to a calendar-related query using RAG with self-querying logic.
+        This is now a generator that yields streaming events.
 
         Args:
             user_email: Email of the user making the query
             query: Natural language query about calendar events
+            rag_query_str: Optional pre-optimized RAG query
             include_attachments: Whether to include attachment content
             date_range_days: Limit search to events within N days
 
-        Returns:
-            Dictionary with response and metadata
+        Yields:
+            Tuples of (event_type, data) where event_type can be:
+            - "status": Status updates during processing
+            - "chunk": Text chunks from LLM
+            - "complete": Final response data with metadata
         """
         # Use self-querying to determine RAG query and parameters
+        yield ("status", {"message": "Analyzing query..."})
+
         query_analysis = {}
         if not rag_query_str:
             query_analysis = self._analyze_user_query(query)
             rag_query_str = query_analysis.get("rag_query", query)
+            if query_analysis.get("include_attachments") is not None:
+                include_attachments = query_analysis["include_attachments"]
+            if query_analysis.get("date_range_days"):
+                date_range_days = query_analysis["date_range_days"]
 
-            include_attachments = query_analysis.get("include_attachments", include_attachments)
-            date_range_days = query_analysis.get("date_range_days", date_range_days)
+        logger.info("Self-querying analysis: %s", query_analysis)
+        logger.info("Using RAG query: '%s' instead of original: '%s'", rag_query_str, query)
 
-            logger.info(f"Self-querying analysis: {query_analysis}")
-            logger.info(f"Using RAG query: '{rag_query_str}' instead of original: '{query}'")
+        yield ("status", {"message": f"Searching calendar events with query: '{rag_query_str}'..."})
 
         start_time = self._get_current_time_ms()
 
         # Retrieve relevant calendar events using the LLM optimized RAG query
         events, scores, rag_query = calendar_rag_service.query_calendar_events(
             user_email=user_email,
-            query_text=rag_query_str or query,  # use user query if LLM Query gen fails.
+            query_text=rag_query_str or query,
             include_attachments=include_attachments,
             date_range_days=date_range_days,
             time_focus=query_analysis.get("time_focus"),
@@ -88,43 +97,64 @@ class GoogleLLMService:
         )
 
         if not events:
-            response = "I couldn't find any relevant calendar events for your query. Please try rephrasing your question or check if you have events in your calendar for the specified time period."
+            no_events_msg = "I couldn't find any calendar events matching your query. Please try rephrasing your question or check if you have events in the specified time range."
+            yield ("chunk", {"text": no_events_msg, "chunk_id": 1})
+            yield (
+                "complete",
+                {
+                    "response": no_events_msg,
+                    "events_found": 0,
+                    "model_used": self.model_name,
+                    "response_time_ms": self._get_current_time_ms() - start_time,
+                    "events": [],
+                    "similarity_scores": [],
+                    "query_analysis": query_analysis,
+                },
+            )
+            return
 
-            if rag_query:
-                rag_query.generated_response = response
-                rag_query.model_used = self.model_name
-                rag_query.response_time_ms = self._get_current_time_ms() - start_time
-                rag_query.save()
-
-            return {
-                "response": response,
-                "events_found": 0,
-                "model_used": self.model_name,
-                "response_time_ms": self._get_current_time_ms() - start_time,
-            }
+        yield ("status", {"message": f"Found {len(events)} relevant events. Generating response..."})
 
         # Prepare context for LLM
         context = calendar_rag_service.get_context_for_llm(events, scores)
 
-        # Generate response using Google's LLM
-        response = self._generate_response_with_context(query, context)
+        # Generate streaming response using Google's LLM
+        full_response = ""
+        chunk_count = 0
+
+        for chunk_type, chunk_data in self._generate_response_with_context_stream(query, context):
+            if chunk_type == "chunk":
+                chunk_count += 1
+                chunk_text = str(chunk_data.get("text", ""))
+                full_response += chunk_text
+                yield ("chunk", {"text": chunk_text, "chunk_id": chunk_count})
+            elif chunk_type == "error":
+                error_msg = str(chunk_data.get("message", ""))
+                yield ("chunk", {"text": error_msg, "chunk_id": chunk_count + 1})
+                full_response = error_msg
+                break
 
         # Update RAG query record
         if rag_query:
-            rag_query.generated_response = response
+            rag_query.generated_response = full_response
             rag_query.model_used = self.model_name
             rag_query.response_time_ms = self._get_current_time_ms() - start_time
             rag_query.save()
 
-        return {
-            "response": response,
-            "events_found": len(events),
-            "model_used": self.model_name,
-            "response_time_ms": self._get_current_time_ms() - start_time,
-            "events": events,
-            "similarity_scores": scores,
-            "query_analysis": query_analysis,  # Include analysis for debugging/transparency
-        }
+        # Yield final response data
+        yield (
+            "complete",
+            {
+                "response": full_response,
+                "events_found": len(events),
+                "model_used": self.model_name,
+                "response_time_ms": self._get_current_time_ms() - start_time,
+                "events": events,
+                "similarity_scores": scores,
+                "query_analysis": query_analysis,
+                "chunk_count": chunk_count,
+            },
+        )
 
     def _analyze_user_query(self, query: str) -> dict:
         """
@@ -140,32 +170,21 @@ class GoogleLLMService:
             prompt_obj = get_object_or_404(PromptTemplate, lookup_key="calendar-query-analysis-prompt")
             prompt_template_str = strip_tags(prompt_obj.prompt_template or "")
             prompt_template = Template(prompt_template_str)
-            analysis_prompt = prompt_template.render(Context({"query": query}))
+            prompt = prompt_template.render(Context({"query": query}))
 
             response = self.client.models.generate_content(
                 model=self.model_name,
-                contents=[{"role": "user", "parts": [{"text": analysis_prompt}]}],
+                contents=[{"role": "user", "parts": [{"text": prompt}]}],
             )
 
             if response and response.text:
+                # Try to extract JSON from the response
                 json_match = re.search(r"\{.*\}", response.text, re.DOTALL)
                 if json_match:
-                    analysis = json.loads(json_match.group())
-
-                    # Validate LLM Results and set defaults
-                    result = {
-                        "rag_query": analysis.get("rag_query", query),
-                        "include_attachments": analysis.get("include_attachments", True),
-                        "date_range_days": min(max(analysis.get("date_range_days", 90), 1), 365),
-                        "time_focus": analysis.get("time_focus", "all"),
-                        "intent": analysis.get("intent", "search"),
-                        "entities": analysis.get("entities", []),
-                    }
-
-                    logger.info(f"LLM Generated Query data: {result}")
-                    return result
-                else:
-                    logger.warning("No JSON found in LLM response")
+                    json_str = json_match.group()
+                    query_data = json.loads(json_str)
+                    logger.info("LLM Generated Query data: %s", query_data)
+                    return query_data
 
         except Exception as e:
             logger.error(f"Error in query analysis: {e}")
@@ -181,8 +200,8 @@ class GoogleLLMService:
             "entities": [],
         }
 
-    def _generate_response_with_context(self, query: str, context: str) -> str:
-        """Generate response using Google's LLM with calendar context."""
+    def _generate_response_with_context_stream(self, query: str, context: str):
+        """Generate streaming response using Google's LLM with calendar context."""
 
         prompt_obj = get_object_or_404(PromptTemplate, lookup_key=self.prompt_lookup_key)
         prompt_template_str = strip_tags(prompt_obj.prompt_template or "")
@@ -192,43 +211,42 @@ class GoogleLLMService:
         logger.warning("using prompt = %s", prompt)
 
         try:
-            # NOTE: using streaming for Proof Of Concept:
-            logger.warning("Starting LLM streaming as a Proof Of Concept.")
+            logger.warning("Starting LLM streaming.")
             response_stream = self.client.models.generate_content_stream(
                 model=self.model_name,
-                # NOTE: for some reason it does not work if i pass the prompt directly.
                 contents=[{"role": "user", "parts": [{"text": prompt}]}],
             )
 
-            response = ""
             chunk_count = 0
             for chunk in response_stream:
                 if chunk.text:
                     chunk_count += 1
                     chunk_text = chunk.text
-                    response += chunk_text
 
-                    # NOTE: just for Proof of Concept, remove in production if doing it in background.
+                    # Log chunk for debugging
                     chunk_preview = chunk_text[:80] + "..." if len(chunk_text) > 80 else chunk_text
                     logger.info(f"Chunk {chunk_count}: {chunk_preview}")
 
-            logger.info(f"Streaming complete! Received {chunk_count} chunks, total length: {len(response)} characters")
-            return response.strip() if response else "No response generated"
+                    yield ("chunk", {"text": chunk_text, "chunk_id": chunk_count})
+
+            logger.info(f"Streaming complete! Received {chunk_count} chunks")
 
         except Exception as e:
             logger.error(f"Error generating LLM response: {e}")
-            return f"I found {len(context.split('---')) - 1} relevant calendar events for your query, but I'm having trouble generating a detailed response right now. Please try again or rephrase your question."
+            error_msg = f"I found relevant calendar events for your query, but I'm having trouble generating a detailed response right now. Please try again or rephrase your question."
+            yield ("error", {"message": error_msg})
 
-    def generate_calendar_summary(self, user_email: str, time_period: str = "today") -> dict:
+    def generate_calendar_summary(self, user_email: str, time_period: str = "today") -> str:
         """
         Generate a summary of calendar events for a specific time period.
+        Returns the final response text from streaming.
 
         Args:
             user_email: Email of the user
             time_period: "today", "tomorrow", "this_week", "next_week"
 
         Returns:
-            Dictionary with summary and metadata
+            String with the summary response
         """
         # Map time periods to queries
         period_queries = {
@@ -241,36 +259,54 @@ class GoogleLLMService:
 
         query = period_queries.get(time_period, f"What are my events for {time_period}?")
 
-        return self.generate_calendar_response(
+        # Collect streaming response
+        final_response = ""
+        for event_type, data in self.generate_calendar_response(
             user_email=user_email,
             query=query,
             include_attachments=False,
             date_range_days=30 if time_period in ["this_month"] else 7,
-        )
+        ):
+            if event_type == "chunk":
+                final_response += str(data.get("text", ""))
+            elif event_type == "complete":
+                return str(data.get("response", final_response))
 
-    def answer_meeting_question(self, user_email: str, meeting_topic: str) -> dict:
+        return final_response
+
+    def answer_meeting_question(self, user_email: str, meeting_topic: str) -> str:
         """
         Answer questions about specific meetings or topics.
+        Returns the final response text from streaming.
 
         Args:
             user_email: Email of the user
             meeting_topic: Topic or keyword to search for
 
         Returns:
-            Dictionary with response and metadata
+            String with the response
         """
         query = f"Tell me about meetings or events related to {meeting_topic}"
 
-        return self.generate_calendar_response(
+        # Collect streaming response
+        final_response = ""
+        for event_type, data in self.generate_calendar_response(
             user_email=user_email,
             query=query,
-            include_attachments=True,  # Include attachment content for detailed questions
+            include_attachments=True,
             date_range_days=90,
-        )
+        ):
+            if event_type == "chunk":
+                final_response += str(data.get("text", ""))
+            elif event_type == "complete":
+                return str(data.get("response", final_response))
 
-    def find_free_time(self, user_email: str, duration_minutes: int = 60, date_range_days: int = 7) -> dict:
+        return final_response
+
+    def find_free_time(self, user_email: str, duration_minutes: int = 60, date_range_days: int = 7) -> str:
         """
         Find free time slots in the user's calendar.
+        Returns the final response text from streaming.
 
         Args:
             user_email: Email of the user
@@ -278,78 +314,25 @@ class GoogleLLMService:
             date_range_days: Number of days to look ahead
 
         Returns:
-            Dictionary with free time suggestions
+            String with free time suggestions
         """
         query = f"When do I have free time in the next {date_range_days} days for a {duration_minutes}-minute meeting?"
 
-        return self.generate_calendar_response(
+        # Collect streaming response
+        final_response = ""
+        for event_type, data in self.generate_calendar_response(
             user_email=user_email, query=query, include_attachments=False, date_range_days=date_range_days
-        )
+        ):
+            if event_type == "chunk":
+                final_response += str(data.get("text", ""))
+            elif event_type == "complete":
+                return str(data.get("response", final_response))
+
+        return final_response
 
     def _get_current_time_ms(self) -> int:
         """Get current time in milliseconds."""
-        import time
-
         return int(time.time() * 1000)
-
-    def generate_calendar_response_old(
-        self,
-        user_email: str,
-        query: str,
-        include_attachments: bool = True,
-        date_range_days: Optional[int] = 90,
-    ) -> dict:
-        """
-        NOTE: Deprecated. ref to new method: generate_calendar_response
-        Generate response using the same query for both RAG and LLM.
-        The reason this failed: RAG was unable to find matches based on user query written for llm.
-        """
-        start_time = self._get_current_time_ms()
-
-        events, scores, rag_query = calendar_rag_service.query_calendar_events(
-            user_email=user_email,
-            query_text=query,
-            include_attachments=include_attachments,
-            date_range_days=date_range_days,
-        )
-
-        if not events:
-            response = "I couldn't find any relevant calendar events for your query. Please try rephrasing your question or check if you have events in your calendar for the specified time period."
-
-            if rag_query:
-                rag_query.generated_response = response
-                rag_query.model_used = self.model_name
-                rag_query.response_time_ms = self._get_current_time_ms() - start_time
-                rag_query.save()
-
-            return {
-                "response": response,
-                "events_found": 0,
-                "model_used": self.model_name,
-                "response_time_ms": self._get_current_time_ms() - start_time,
-            }
-
-        # Prepare context for LLM
-        context = calendar_rag_service.get_context_for_llm(events, scores)
-
-        # Generate response using Google's LLM with original query
-        response = self._generate_response_with_context(query, context)
-
-        # Update RAG query record
-        if rag_query:
-            rag_query.generated_response = response
-            rag_query.model_used = self.model_name
-            rag_query.response_time_ms = self._get_current_time_ms() - start_time
-            rag_query.save()
-
-        return {
-            "response": response,
-            "events_found": len(events),
-            "model_used": self.model_name,
-            "response_time_ms": self._get_current_time_ms() - start_time,
-            "events": events,
-            "similarity_scores": scores,
-        }
 
 
 # import google_llm_service to use in other modules.
